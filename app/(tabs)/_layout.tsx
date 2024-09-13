@@ -1,9 +1,9 @@
 import { Tabs } from "expo-router";
 import React from "react";
-import FontAwesome6 from "@expo/vector-icons/FontAwesome6";
 import { TabBarIcon } from "@/components/navigation/TabBarIcon";
 import { Colors } from "@/constants/Colors";
 import { useColorScheme } from "@/hooks/useColorScheme";
+
 export default function TabLayout() {
   const colorScheme = useColorScheme();
 
@@ -11,9 +11,10 @@ export default function TabLayout() {
     <Tabs
       screenOptions={{
         tabBarActiveTintColor: Colors[colorScheme ?? "light"].tint,
-        headerShown: false,
+        headerShown: false, // Wyłącz nagłówek dla zakładek
       }}
     >
+      {/* Ręcznie zdefiniowane zakładki */}
       <Tabs.Screen
         name="index"
         options={{
@@ -40,10 +41,14 @@ export default function TabLayout() {
         options={{
           title: "Rośliny",
           tabBarIcon: ({ color, focused }) => (
-            <TabBarIcon name={focused ? "key" : "key-outline"} color={color} />
+            <TabBarIcon
+              name={focused ? "leaf" : "leaf-outline"}
+              color={color}
+            />
           ),
         }}
       />
+      {/* Tutaj możesz dodać inne zakładki */}
     </Tabs>
   );
 }

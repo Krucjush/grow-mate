@@ -1,37 +1,36 @@
 import React from "react";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
-import { RootStackParamList } from "./types"; // Typy
-import HomeScreen from "@/app/(tabs)";
-import RegisterScreen from "@/app/(tabs)/register";
-import { TabBarIcon } from "./TabBarIcon";
-import PlantsScreen from "@/app/(tabs)/plants";
-import LoginScreen from "../login";
+import { Ionicons } from "@expo/vector-icons"; // Lub inne ikony
 
-const Tab = createBottomTabNavigator<RootStackParamList>();
+// Importuj ekrany
+import HomeScreen from "../screens/HomeScreen";
+import LoginScreen from "../screens/LoginScreen";
+import RegisterScreen from "../screens/RegisterScreen";
+import PlantsScreen from "../screens/PlantsScreen";
+import UserGardenScreen from "../screens/UserGardenScreen";
 
-export default function TabNavigator() {
+const Tab = createBottomTabNavigator();
+
+const TabNavigation = () => {
   return (
     <Tab.Navigator>
       <Tab.Screen
         name="Home"
         component={HomeScreen}
         options={{
-          title: "Home",
-          tabBarIcon: ({ color, focused }) => (
-            <TabBarIcon
-              name={focused ? "home" : "home-outline"}
-              color={color}
-            />
+          tabBarLabel: "Home",
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="home" color={color} size={size} />
           ),
         }}
       />
       <Tab.Screen
-        name="register"
-        component={RegisterScreen}
+        name="Login"
+        component={LoginScreen}
         options={{
-          title: "Sign In/Up",
-          tabBarIcon: ({ color, focused }) => (
-            <TabBarIcon name={focused ? "key" : "key-outline"} color={color} />
+          tabBarLabel: "Sign In/Up",
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="key" color={color} size={size} />
           ),
         }}
       />
@@ -39,28 +38,24 @@ export default function TabNavigator() {
         name="Plants"
         component={PlantsScreen}
         options={{
-          title: "Plants",
-          tabBarIcon: ({ color, focused }) => (
-            <TabBarIcon
-              name={focused ? "leaf" : "leaf-outline"}
-              color={color}
-            />
+          tabBarLabel: "Rośliny",
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="leaf" color={color} size={size} />
           ),
         }}
       />
       <Tab.Screen
-        name="login"
-        component={LoginScreen} // Dodaj komponent logowania
+        name="UserGarden"
+        component={UserGardenScreen}
         options={{
-          title: "Login",
-          tabBarIcon: ({ color, focused }) => (
-            <TabBarIcon
-              name={focused ? "person" : "person-outline"}
-              color={color}
-            />
+          tabBarLabel: "userGarden",
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="flower" color={color} size={size} />
           ),
         }}
       />
     </Tab.Navigator>
   );
-}
+};
+
+export default TabNavigation;

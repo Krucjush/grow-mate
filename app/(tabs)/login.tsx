@@ -17,33 +17,31 @@ import { useNavigation } from "@react-navigation/native";
 import { StackNavigationProp } from "@react-navigation/stack";
 import { RootStackParamList } from "@/components/navigation/types";
 
-type RegisterScreenNavigationProp = StackNavigationProp<
+type LoginScreenNavigationProp = StackNavigationProp<
   RootStackParamList,
-  "register"
+  "login"
 >;
 
-const RegisterScreen: React.FC = () => {
-  const [username, setUsername] = useState<string>("");
+const LoginScreen: React.FC = () => {
   const [email, setEmail] = useState<string>("");
   const [password, setPassword] = useState<string>("");
 
-  const navigation = useNavigation<RegisterScreenNavigationProp>();
+  const navigation = useNavigation<LoginScreenNavigationProp>();
   const colorScheme = useColorScheme(); // Detekcja trybu kolorów
 
-  const handleRegister = async () => {
-    if (!username || !email || !password) {
+  const handleLogin = async () => {
+    if (!email || !password) {
       Alert.alert("Błąd", "Wszystkie pola muszą być wypełnione");
       return;
     }
 
     try {
-      const response = await fetch("https://example.com/api/register", {
+      const response = await fetch("https://example.com/api/login", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          username,
           email,
           password,
         }),
@@ -52,7 +50,7 @@ const RegisterScreen: React.FC = () => {
       const data = await response.json();
 
       if (response.ok) {
-        Alert.alert("Sukces", "Konto zostało utworzone");
+        Alert.alert("Sukces", "Logowanie powiodło się");
       } else {
         Alert.alert("Błąd", data.message || "Coś poszło nie tak");
       }
@@ -66,7 +64,7 @@ const RegisterScreen: React.FC = () => {
       headerBackgroundColor={{ light: "#FFFFFF", dark: "#FFFFFF" }} // Kolor tła nagłówka
       headerImage={
         <Image
-          source={require("@/assets/images/image.png")} // Lokalny obrazek, upewnij się, że ścieżka do obrazu jest poprawna
+          source={require("@/assets/images/image.png")} // Użyj tego samego obrazka co w rejestracji
           style={{ width: "100%", height: "100%" }} // Ustawienie obrazu na pełny nagłówek
           resizeMode="cover" // Dopasowanie obrazu do rozmiaru
         />
@@ -79,15 +77,7 @@ const RegisterScreen: React.FC = () => {
         ]}
       >
         <ThemedView style={styles.container}>
-          <Text style={styles.title}>Zarejestruj się</Text>
-          <Text style={styles.label}>Nazwa użytkownika</Text>
-          <TextInput
-            style={styles.input}
-            value={username}
-            onChangeText={setUsername}
-            placeholder="Wpisz nazwę użytkownika"
-            placeholderTextColor="#888"
-          />
+          <Text style={styles.title}>Zaloguj się</Text>
           <Text style={styles.label}>Email</Text>
           <TextInput
             style={styles.input}
@@ -106,15 +96,17 @@ const RegisterScreen: React.FC = () => {
             placeholderTextColor="#888"
             secureTextEntry
           />
-          <TouchableOpacity style={styles.button} onPress={handleRegister}>
-            <Text style={styles.buttonText}>Zarejestruj się</Text>
+          <TouchableOpacity style={styles.button} onPress={handleLogin}>
+            <Text style={styles.buttonText}>Zaloguj się</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
             style={styles.loginLink}
-            onPress={() => navigation.navigate("login")} // Używanie funkcji nawigacji
+            onPress={() => navigation.navigate("register")} // Używanie funkcji nawigacji do ekranu rejestracji
           >
-            <Text style={styles.loginText}>Masz już konto? Zaloguj się</Text>
+            <Text style={styles.loginText}>
+              Nie masz konta? Zarejestruj się
+            </Text>
           </TouchableOpacity>
         </ThemedView>
       </ScrollView>
@@ -183,4 +175,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default RegisterScreen;
+export default LoginScreen;

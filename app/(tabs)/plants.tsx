@@ -7,7 +7,7 @@ import {
   ActivityIndicator,
   Image,
 } from "react-native";
-import "dotenv/config";
+import { API_KEY, API_URL } from "@env";
 interface Plant {
   id: number;
   common_name: string;
@@ -23,14 +23,11 @@ const PlantsScreen: React.FC = () => {
   const [plants, setPlants] = useState<Plant[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
-  const apiKEY = process.env.API_KEY;
+
   useEffect(() => {
     const fetchPlants = async () => {
       try {
-        console.log(apiKEY);
-        const response = await fetch(
-          `https://perenual.com/api/species-list?key=${apiKEY}`
-        );
+        const response = await fetch(`${API_URL}${API_KEY}`);
         const data = await response.json();
         setPlants(data.data); // Accessing the 'data' array
       } catch (error) {

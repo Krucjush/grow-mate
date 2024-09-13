@@ -1,0 +1,29 @@
+{
+  "plants": [
+    {
+      "id": "1",
+      "name": "Rose",
+      "imageUrl": "https://www.flaberry.com/_next/image?url=https%3A%2F%2Fik.imagekit.io%2Fflaberry%2Fmedia%2Fcatalog%2Fproduct%2F3%2F1%2F312pid_1.jpg&w=640&q=75"
+    },
+    {
+      "id": "2",
+      "name": "Sunflower",
+      "imageUrl": "https://example.com/images/sunflower.jpg"
+    },
+    {
+      "id": "3",
+      "name": "Tulip",
+      "imageUrl": "https://example.com/images/tulip.jpg"
+    },
+    {
+      "id": "4",
+      "name": "Daffodil",
+      "imageUrl": "https://example.com/images/daffodil.jpg"
+    },
+    {
+      "id": "5",
+      "name": "Orchid",
+      "imageUrl": "https://example.com/images/orchid.jpg"
+    }
+  ]
+}
