@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using MongoDB.Driver;
 
 [Route("api/[controller]")]
@@ -12,6 +13,7 @@ public class UsersController : ControllerBase
 		_usersCollection = database.GetCollection<User>("Users");
 	}
 
+	[Authorize]
 	[HttpGet]
 	public async Task<IActionResult> Get()
 	{
@@ -19,6 +21,7 @@ public class UsersController : ControllerBase
 		return Ok(users);
 	}
 
+	[Authorize]
 	[HttpPost]
 	public async Task<IActionResult> Create(User user)
 	{
@@ -26,6 +29,7 @@ public class UsersController : ControllerBase
 		return CreatedAtAction(nameof(Get), new { id = user.Id }, user);
 	}
 
+	[Authorize]
 	[HttpPut("{id}")]
 	public async Task<IActionResult> Update(string id, User user)
 	{
@@ -37,6 +41,7 @@ public class UsersController : ControllerBase
 		return Ok(user);
 	}
 
+	[Authorize]
 	[HttpDelete("{id}")]
 	public async Task<IActionResult> Delete(string id)
 	{
@@ -49,6 +54,7 @@ public class UsersController : ControllerBase
 		return NoContent();
 	}
 
+	[Authorize]
 	[HttpGet("{id}")]
 	public async Task<IActionResult> GetById(string id)
 	{

@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using MongoDB.Driver;
 
 [Route("api/[controller]")]
@@ -12,6 +13,7 @@ public class GardenTaskController : ControllerBase
 		_tasksCollection = database.GetCollection<GardenTask>("GardenTasks");
 	}
 
+	[Authorize]
 	[HttpGet]
 	public async Task<IActionResult> Get()
 	{
@@ -19,6 +21,7 @@ public class GardenTaskController : ControllerBase
 		return Ok(tasks);
 	}
 
+	[Authorize]
 	[HttpPost]
 	public async Task<IActionResult> Create(GardenTask task)
 	{
@@ -26,6 +29,7 @@ public class GardenTaskController : ControllerBase
 		return CreatedAtAction(nameof(Get), new { id = task.Id }, task);
 	}
 
+	[Authorize]
 	[HttpPut("{id}")]
 	public async Task<IActionResult> Update(string id, GardenTask task)
 	{
@@ -37,6 +41,7 @@ public class GardenTaskController : ControllerBase
 		return Ok(task);
 	}
 
+	[Authorize]
 	[HttpDelete("{id}")]
 	public async Task<IActionResult> Delete(string id)
 	{
@@ -49,6 +54,7 @@ public class GardenTaskController : ControllerBase
 		return NoContent();
 	}
 
+	[Authorize]
 	[HttpGet("{id}")]
 	public async Task<IActionResult> GetById(string id)
 	{
@@ -60,6 +66,7 @@ public class GardenTaskController : ControllerBase
 		return Ok(task);
 	}
 
+	[Authorize]
 	[HttpGet("by-user/{userId}")]
 	public async Task<IActionResult> GetByUserId(string userId)
 	{
