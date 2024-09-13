@@ -7,9 +7,8 @@ public class PlantsController : ControllerBase
 {
 	private readonly IMongoCollection<Plant> _plantsCollection;
 
-	public PlantsController(IMongoClient mongoClient)
+	public PlantsController(IMongoDatabase database)
 	{
-		var database = mongoClient.GetDatabase("GrowMateDB");
 		_plantsCollection = database.GetCollection<Plant>("Plants");
 	}
 
