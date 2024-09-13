@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using MongoDB.Driver;
 
@@ -12,12 +13,15 @@ public class PlantsController : ControllerBase
 		_plantsCollection = database.GetCollection<Plant>("Plants");
 	}
 
+	[AllowAnonymous]
 	[HttpGet]
 	public async Task<IActionResult> Get()
 	{
 		var plants = await _plantsCollection.Find(_ => true).ToListAsync();
 		return Ok(plants);
 	}
+
+	[Authorize]
 	[HttpPost]
 	public async Task<IActionResult> Create(Plant plant)
 	{
@@ -25,6 +29,7 @@ public class PlantsController : ControllerBase
 		return CreatedAtAction(nameof(Get), new { id = plant.Id }, plant);
 	}
 
+	[Authorize]
 	[HttpGet("{id}")]
 	public async Task<IActionResult> GetById(string id)
 	{
@@ -36,6 +41,7 @@ public class PlantsController : ControllerBase
 		return Ok(plant);
 	}
 
+	[AllowAnonymous]
 	[HttpGet("by-knowledge-base/{knowledgeBaseId}")]
 	public async Task<IActionResult> GetByKnowledgeBase(string knowledgeBaseId)
 	{
@@ -43,6 +49,7 @@ public class PlantsController : ControllerBase
 		return Ok(plants);
 	}
 
+	[Authorize]
 	[HttpPut("{id}")]
 	public async Task<IActionResult> Update(string id, Plant plant)
 	{
@@ -54,6 +61,7 @@ public class PlantsController : ControllerBase
 		return Ok(plant);
 	}
 
+	[Authorize]
 	[HttpDelete("{id}")]
 	public async Task<IActionResult> Delete(string id)
 	{
