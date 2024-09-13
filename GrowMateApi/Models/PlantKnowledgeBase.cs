@@ -8,5 +8,5 @@
 	public string LightRequirements { get; set; }
 	public TimeSpan WateringInterval { get; set; }
 	public string WateringIntensity { get; set; }
-	public DateTime TypicalPlantingSeason { get; set; }
+	public PlantingSeason TypicalPlantingSeason { get; set; }
 }
