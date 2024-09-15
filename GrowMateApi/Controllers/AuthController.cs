@@ -13,11 +13,13 @@ public class AuthController : ControllerBase
 {
 	private readonly IMongoCollection<User> _usersCollection;
 	private readonly IConfiguration _configuration;
+	private readonly IMongoCollection<Garden> _gardensCollection;
 
 	public AuthController(IMongoDatabase database, IConfiguration configuration)
 	{
 		_usersCollection = database.GetCollection<User>("Users");
 		_configuration = configuration;
+		_gardensCollection = database.GetCollection<Garden>("Gardens");
 	}
 
 	[AllowAnonymous]
@@ -37,6 +39,18 @@ public class AuthController : ControllerBase
 			Email = request.Email,
 			PasswordHash = passwordHash
 		};
+
+		var defaultGarden = new Garden
+		{
+			Id = user.Id,
+			UserId = user.Id,
+			Name = $"{user.Username}'s garden",
+			Plants = new List<Plant>(),
+			Location = string.Empty,
+			Soil = new SoilParameters()
+		};
+
+		await _gardensCollection.InsertOneAsync(defaultGarden);
 
 		await _usersCollection.InsertOneAsync(user);
 		return Ok("User registered successfully");
