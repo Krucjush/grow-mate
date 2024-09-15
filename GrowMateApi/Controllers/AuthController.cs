@@ -51,7 +51,7 @@ public class AuthController : ControllerBase
 			return Unauthorized("Invalid credentials.");
 
 		var token = CreateToken(user);
-		return Ok(new { token });
+		return Ok(new { token, user.Id });
 	}
 
 	private string CreateToken(User user)

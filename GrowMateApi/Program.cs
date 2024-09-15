@@ -13,6 +13,18 @@ namespace GrowMateApi
 		{
 			var builder = WebApplication.CreateBuilder(args);
 
+			builder.Services.AddCors(option =>
+			{
+				option.AddPolicy("AllowAllOrigins",
+					policy =>
+					{
+						policy.AllowAnyOrigin()
+							.AllowAnyHeader()
+							.AllowAnyMethod();
+					});
+			});
+
+
 			// Add services to the container.
 			builder.Services.Configure<DatabaseSettings>(builder.Configuration.GetSection("DatabaseSettings"));
 
@@ -91,6 +103,8 @@ namespace GrowMateApi
 			}
 
 			app.UseHttpsRedirection();
+
+			app.UseCors("AllowAllOrigins");
 
 			app.UseAuthentication();
 			app.UseAuthorization();
