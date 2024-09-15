@@ -7,10 +7,12 @@ using MongoDB.Driver;
 public class UsersController : ControllerBase
 {
 	private readonly IMongoCollection<User> _usersCollection;
+	private readonly IMongoCollection<Garden> _gardensCollection;
 
 	public UsersController(IMongoDatabase database)
 	{
 		_usersCollection = database.GetCollection<User>("Users");
+		_gardensCollection = database.GetCollection<Garden>("Gardens");
 	}
 
 	[Authorize]
@@ -25,6 +27,18 @@ public class UsersController : ControllerBase
 	[HttpPost]
 	public async Task<IActionResult> Create(User user)
 	{
+		var defaultGarden = new Garden
+		{
+			Id = user.Id,
+			UserId = user.Id,
+			Name = $"{user.Username}'s garden",
+			Plants = new List<Plant>(),
+			Location = string.Empty,
+			Soil = new SoilParameters()
+		};
+
+		await _gardensCollection.InsertOneAsync(defaultGarden);
+
 		await _usersCollection.InsertOneAsync(user);
 		return CreatedAtAction(nameof(Get), new { id = user.Id }, user);
 	}

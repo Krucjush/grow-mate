@@ -10,7 +10,7 @@ import {
   Alert,
 } from "react-native";
 
-import { useNavigation, useRoute } from "@react-navigation/native";
+import { useRoute } from "@react-navigation/native";
 import { useEffect, useState } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useAuth } from "@/components/AuthContext";
@@ -117,7 +117,6 @@ const UserGardenScreen: React.FC = () => {
   // Function to mark a task as completed
   const markTaskAsCompleted = async (taskId: string) => {
     try {
-      console.log(taskId);
       const token = await AsyncStorage.getItem("jwtToken");
 
       const response = await fetch(`${apiUrl}/api/GardenTask/${taskId}`, {
@@ -126,7 +125,6 @@ const UserGardenScreen: React.FC = () => {
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
         },
-
         body: JSON.stringify({ isCompleted: true }),
       });
 
@@ -236,10 +234,6 @@ const UserGardenScreen: React.FC = () => {
             renderItem={renderPlant}
             keyExtractor={(item) => item.id}
             contentContainerStyle={styles.plantList}
-          />
-          <Button
-            title="Add Plant"
-            onPress={() => navigation.navigate("addPlantForm")}
           />
 
           <Text style={styles.sectionTitle}>Garden Tasks</Text>
