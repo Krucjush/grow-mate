@@ -11,6 +11,7 @@ import LoginScreen from "./login";
 import RegisterScreen from "./register";
 import UserGardenScreen from "./userGarden";
 import LogoutScreen from "./logout";
+import AddPlantForm from "./addPlantForm";
 
 const Tab = createBottomTabNavigator();
 
@@ -81,6 +82,21 @@ export default function TabLayout() {
             tabBarIcon: ({ color, focused }) => (
               <TabBarIcon
                 name={focused ? "alert" : "alert-outline"}
+                color={color}
+              />
+            ),
+          }}
+          initialParams={{ userId: null }}
+        />
+      )}
+      {isLoggedIn && (
+        <Tab.Screen
+          name="Add plant"
+          component={AddPlantForm}
+          options={{
+            tabBarIcon: ({ color, focused }) => (
+              <TabBarIcon
+                name={focused ? "link" : "link-outline"}
                 color={color}
               />
             ),
