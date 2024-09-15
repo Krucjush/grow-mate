@@ -1,24 +1,29 @@
-import { Tabs } from "expo-router";
 import React from "react";
-import { TabBarIcon } from "@/components/navigation/TabBarIcon";
-import { Colors } from "@/constants/Colors";
+import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
+import { NavigationContainer } from "@react-navigation/native";
 import { useColorScheme } from "@/hooks/useColorScheme";
+import { useAuth } from "@/components/AuthContext";
+// Adjust the path as needed
+import { TabBarIcon } from "@/components/navigation/TabBarIcon"; // Adjust the path as needed
+import HomeScreen from ".";
+import PlantsScreen from "./plants";
+import LoginScreen from "./login";
+import RegisterScreen from "./register";
+import UserGardenScreen from "./userGarden";
+import LogoutScreen from "./logout";
+
+const Tab = createBottomTabNavigator();
 
 export default function TabLayout() {
   const colorScheme = useColorScheme();
+  const { isLoggedIn, userId, logout } = useAuth();
 
   return (
-    <Tabs
-      screenOptions={{
-        tabBarActiveTintColor: Colors[colorScheme ?? "light"].tint,
-        headerShown: false, // Wyłącz nagłówek dla zakładek
-      }}
-    >
-      {/* Ręcznie zdefiniowane zakładki */}
-      <Tabs.Screen
-        name="index"
+    <Tab.Navigator>
+      <Tab.Screen
+        name="Home"
+        component={HomeScreen}
         options={{
-          title: "Home",
           tabBarIcon: ({ color, focused }) => (
             <TabBarIcon
               name={focused ? "home" : "home-outline"}
@@ -27,19 +32,10 @@ export default function TabLayout() {
           ),
         }}
       />
-      <Tabs.Screen
-        name="register"
+      <Tab.Screen
+        name="Plants"
+        component={PlantsScreen}
         options={{
-          title: "Sign In/Up",
-          tabBarIcon: ({ color, focused }) => (
-            <TabBarIcon name={focused ? "key" : "key-outline"} color={color} />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="plants"
-        options={{
-          title: "Rośliny",
           tabBarIcon: ({ color, focused }) => (
             <TabBarIcon
               name={focused ? "leaf" : "leaf-outline"}
@@ -48,7 +44,64 @@ export default function TabLayout() {
           ),
         }}
       />
-      {/* Tutaj możesz dodać inne zakładki */}
-    </Tabs>
+      {!isLoggedIn && (
+        <Tab.Screen
+          name="Login"
+          component={LoginScreen}
+          options={{
+            tabBarButton: () => null,
+            tabBarIcon: ({ color, focused }) => (
+              <TabBarIcon
+                name={focused ? "key" : "key-outline"}
+                color={color}
+              />
+            ),
+          }}
+        />
+      )}
+      {!isLoggedIn && (
+        <Tab.Screen
+          name="Register"
+          component={RegisterScreen}
+          options={{
+            tabBarIcon: ({ color, focused }) => (
+              <TabBarIcon
+                name={focused ? "key" : "key-outline"}
+                color={color}
+              />
+            ),
+          }}
+        />
+      )}
+      {isLoggedIn && (
+        <Tab.Screen
+          name="Garden"
+          component={UserGardenScreen}
+          options={{
+            tabBarIcon: ({ color, focused }) => (
+              <TabBarIcon
+                name={focused ? "alert" : "alert-outline"}
+                color={color}
+              />
+            ),
+          }}
+          initialParams={{ userId: null }}
+        />
+      )}
+      {isLoggedIn && (
+        <Tab.Screen
+          name="Logout"
+          children={() => <LogoutScreen onLogout={logout} />}
+          options={{
+            tabBarIcon: ({ color, focused }) => (
+              <TabBarIcon
+                name={focused ? "exit" : "exit-outline"}
+                color={color}
+              />
+            ),
+          }}
+        />
+      )}
+    </Tab.Navigator>
   );
 }

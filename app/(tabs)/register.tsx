@@ -16,7 +16,7 @@ import ParallaxScrollView from "@/components/ParallaxScrollView";
 import { useNavigation } from "@react-navigation/native";
 import { StackNavigationProp } from "@react-navigation/stack";
 import { RootStackParamList } from "@/components/navigation/types";
-
+import LoginScreen from "./_layout"
 type RegisterScreenNavigationProp = StackNavigationProp<
   RootStackParamList,
   "register"
@@ -29,7 +29,7 @@ const RegisterScreen: React.FC = () => {
 
   const navigation = useNavigation<RegisterScreenNavigationProp>();
   const colorScheme = useColorScheme(); // Detekcja trybu kolorów
-
+  const apiUrl = process.env.EXPO_PUBLIC_API;
   const handleRegister = async () => {
     if (!username || !email || !password) {
       Alert.alert("Błąd", "Wszystkie pola muszą być wypełnione");
@@ -37,7 +37,7 @@ const RegisterScreen: React.FC = () => {
     }
 
     try {
-      const response = await fetch("https://example.com/api/register", {
+      const response = await fetch(`${apiUrl}/api/Auth/register`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -112,7 +112,7 @@ const RegisterScreen: React.FC = () => {
 
           <TouchableOpacity
             style={styles.loginLink}
-            onPress={() => navigation.navigate("login")} // Używanie funkcji nawigacji
+            onPress={() => navigation.navigate("Login")} // Używanie funkcji nawigacji
           >
             <Text style={styles.loginText}>Masz już konto? Zaloguj się</Text>
           </TouchableOpacity>
