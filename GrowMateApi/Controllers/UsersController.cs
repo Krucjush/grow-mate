@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using System.Security.Claims;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using MongoDB.Driver;
 
@@ -13,20 +14,12 @@ public class UsersController : ControllerBase
 		_usersCollection = database.GetCollection<User>("Users");
 	}
 
-	[Authorize]
+	[Authorize(Roles= "Admin")]
 	[HttpGet]
 	public async Task<IActionResult> Get()
 	{
 		var users = await _usersCollection.Find(_ => true).ToListAsync();
 		return Ok(users);
-	}
-
-	[Authorize]
-	[HttpPost]
-	public async Task<IActionResult> Create(User user)
-	{
-		await _usersCollection.InsertOneAsync(user);
-		return CreatedAtAction(nameof(Get), new { id = user.Id }, user);
 	}
 
 	[Authorize]
@@ -45,6 +38,14 @@ public class UsersController : ControllerBase
 	[HttpDelete("{id}")]
 	public async Task<IActionResult> Delete(string id)
 	{
+		var currentUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+		var currentUserRole = User.FindFirstValue(ClaimTypes.Role);
+
+		if (currentUserId != id && currentUserRole != "Admin")
+		{
+			return Forbid();
+		}
+
 		var result = await _usersCollection.DeleteOneAsync(u => u.Id == id);
 		if (result.DeletedCount == 0)
 		{

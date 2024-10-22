@@ -35,7 +35,8 @@ public class AuthController : ControllerBase
 			Id = Guid.NewGuid().ToString(),
 			Username = request.Username,
 			Email = request.Email,
-			PasswordHash = passwordHash
+			PasswordHash = passwordHash,
+			Role = "User"
 		};
 
 		await _usersCollection.InsertOneAsync(user);
@@ -60,7 +61,8 @@ public class AuthController : ControllerBase
 		{
 			new Claim(ClaimTypes.NameIdentifier, user.Id),
 			new Claim(ClaimTypes.Email, user.Email),
-			new Claim(ClaimTypes.Name, user.Username)
+			new Claim(ClaimTypes.Name, user.Username),
+			new Claim(ClaimTypes.Role, user.Role)
 		};
 
 		var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["JWT:Key"]!));
