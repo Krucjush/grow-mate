@@ -1,4 +1,7 @@
 using System.Text;
+using GrowMateApi.Interfaces;
+using GrowMateApi.Models;
+using GrowMateApi.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
@@ -34,15 +37,14 @@ namespace GrowMateApi
 				return new MongoClient(settings.ConnectionString);
 			});
 
-			builder.Services.AddSingleton<IMongoDatabase>(sp =>
+			builder.Services.AddSingleton(sp =>
 			{
 				var settings = sp.GetRequiredService<IOptions<DatabaseSettings>>().Value;
 				var mongoClient = sp.GetRequiredService<IMongoClient>();
 				return mongoClient.GetDatabase(settings.DatabaseName);
 			});
 
-			builder.Services.AddControllers();
-
+			// Configure JWT Authentication
 			builder.Services.AddAuthentication(options =>
 			{
 				options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
@@ -60,7 +62,11 @@ namespace GrowMateApi
 				};
 			});
 
-			// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
+			// Email Service configuration
+			builder.Services.Configure<EmailSettings>(builder.Configuration.GetSection("EmailSettings"));
+			builder.Services.AddTransient<IEmailService, EmailService>();
+
+			// Add Swagger and configure security definitions
 			builder.Services.AddEndpointsApiExplorer();
 			builder.Services.AddSwaggerGen(c =>
 			{
@@ -90,6 +96,8 @@ namespace GrowMateApi
 				});
 			});
 
+			builder.Services.AddControllers();
+
 			var app = builder.Build();
 
 			// Configure the HTTP request pipeline.
@@ -108,7 +116,6 @@ namespace GrowMateApi
 
 			app.UseAuthentication();
 			app.UseAuthorization();
-
 
 			app.MapControllers();
 

@@ -3,6 +3,8 @@ using MongoDB.Driver;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
+using GrowMateApi.Interfaces;
+using GrowMateApi.Models.Dtos;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.IdentityModel.Tokens;
 
@@ -13,11 +15,13 @@ public class AuthController : ControllerBase
 {
 	private readonly IMongoCollection<User> _usersCollection;
 	private readonly IConfiguration _configuration;
+	private readonly IEmailService _emailService;
 
-	public AuthController(IMongoDatabase database, IConfiguration configuration)
+	public AuthController(IMongoDatabase database, IConfiguration configuration, IEmailService emailService)
 	{
 		_usersCollection = database.GetCollection<User>("Users");
 		_configuration = configuration;
+		_emailService = emailService;
 	}
 
 	[AllowAnonymous]
@@ -53,6 +57,42 @@ public class AuthController : ControllerBase
 
 		var token = CreateToken(user);
 		return Ok(new { token, user.Id });
+	}
+
+	[AllowAnonymous]
+	[HttpPost("request-password-reset")]
+	public async Task<IActionResult> RequestPasswordReset([FromBody] string email)
+	{
+		var user = await _usersCollection.Find(u => u.Email == email).FirstOrDefaultAsync();
+		if (user == null) return NotFound("No user found with this email.");
+
+		var resetToken = Guid.NewGuid().ToString();
+		user.PasswordResetToken = resetToken;
+		user.ResetTokenExpiration = DateTime.UtcNow.AddHours(1);
+
+		await _usersCollection.ReplaceOneAsync(u => u.Id == user.Id, user);
+
+		var resetLink = $"{Request.Scheme}://{Request.Host}/reset-password?token={resetToken}";
+		await _emailService.SendEmailAsync(user.Email, "Password Reset Request",
+			$"Click here to reset your password: {resetLink}");
+
+		return Ok("Password reset link has been sent to your email.");
+	}
+
+	[AllowAnonymous]
+	[HttpPost("reset-password")]
+	public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordDto request)
+	{
+		var user = await _usersCollection.Find(u => u.PasswordResetToken == request.Token && u.ResetTokenExpiration > DateTime.UtcNow).FirstOrDefaultAsync();
+		if (user == null) return BadRequest("Invalid or expired token.");
+
+		user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.NewPassword);
+		user.PasswordResetToken = null;
+		user.ResetTokenExpiration = null;
+
+		await _usersCollection.ReplaceOneAsync(u => u.Id == user.Id, user);
+
+		return Ok("Password has been reset successfully.");
 	}
 
 	private string CreateToken(User user)
