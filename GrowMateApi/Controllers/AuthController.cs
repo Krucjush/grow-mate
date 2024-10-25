@@ -95,6 +95,43 @@ public class AuthController : ControllerBase
 		return Ok("Password has been reset successfully.");
 	}
 
+	[Authorize]
+	[HttpPut("update-profile")]
+	public async Task<IActionResult> UpdateProfile(UpdateUserProfileDto request)
+	{
+		var requesterId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+		if (requesterId == null) return Unauthorized("User not authenticated.");
+
+		var isAdmin = User.IsInRole("Admin");
+
+		var userId = isAdmin && !string.IsNullOrEmpty(request.UserId) ? request.UserId : requesterId;
+
+		var user = await _usersCollection.Find(u => u.Id == userId).FirstOrDefaultAsync();
+		if (user == null) return NotFound("User not found.");
+
+		if (!string.IsNullOrEmpty(request.Username))
+		{
+			user.Username = request.Username;
+		}
+
+		if (!string.IsNullOrEmpty(request.CurrentPassword) && !string.IsNullOrEmpty(request.NewPassword))
+		{
+			if (!isAdmin)
+			{
+				if (!BCrypt.Net.BCrypt.Verify(request.CurrentPassword, user.PasswordHash))
+				{
+					return BadRequest("Current password is incorrect.");
+				}
+			}
+			
+			user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.NewPassword);
+		}
+
+		await _usersCollection.ReplaceOneAsync(u => u.Id == user.Id, user);
+
+		return Ok("Profile updated successfully.");
+	}
+
 	private string CreateToken(User user)
 	{
 		var claims = new[]
