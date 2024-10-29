@@ -10,6 +10,20 @@ public static class SeedData
 		var gardenTasksCollection = database.GetCollection<GardenTask>("GardenTasks");
 		var plantKnowledgeBaseCollection = database.GetCollection<PlantKnowledgeBase>("PlantKnowledgeBase");
 
+		var adminExists = usersCollection.Find(u => u.Role == "Admin").FirstOrDefault();
+
+		if (adminExists == null)
+		{
+			var adminUser = new User
+			{
+				Username = "admin",
+				Email = "admin@example.com",
+				PasswordHash = BCrypt.Net.BCrypt.HashPassword("AdminPassword123!"),
+				Role = "Admin"
+			};
+			await usersCollection.InsertOneAsync(adminUser);
+		}
+
 		if (await usersCollection.CountDocumentsAsync(_ => true) == 0)
 		{
 			await usersCollection.InsertManyAsync(new[]
