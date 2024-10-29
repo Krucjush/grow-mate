@@ -16,6 +16,7 @@ using Amazon.Runtime.Internal;
 public class AuthController : ControllerBase
 {
 	private readonly IMongoCollection<User> _usersCollection;
+	private readonly IMongoCollection<Garden> _gardensCollection;
 	private readonly IConfiguration _configuration;
 	private readonly IEmailService _emailService;
 	private readonly Regex _passwordRegex = new (@"^(?=.*[a-z])(?=.*[A-Z])(?=.*[\W_]).{8,}$");
@@ -23,6 +24,7 @@ public class AuthController : ControllerBase
 	public AuthController(IMongoDatabase database, IConfiguration configuration, IEmailService emailService)
 	{
 		_usersCollection = database.GetCollection<User>("Users");
+		_gardensCollection = database.GetCollection<Garden>("Gardens");
 		_configuration = configuration;
 		_emailService = emailService;
 	}
