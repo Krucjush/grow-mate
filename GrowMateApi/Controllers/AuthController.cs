@@ -52,6 +52,7 @@ public class AuthController : ControllerBase
 			return BadRequest("User with this email already exists.");
 
 		var passwordHash = BCrypt.Net.BCrypt.HashPassword(request.Password);
+		var emailConfirmationToken = Guid.NewGuid().ToString();
 
 		var user = new User
 		{
@@ -59,11 +60,19 @@ public class AuthController : ControllerBase
 			Username = request.Username,
 			Email = request.Email,
 			PasswordHash = passwordHash,
-			Role = "User"
+			Role = "User",
+			EmailConfirmationToken = emailConfirmationToken,
+			EmailConfirmationExpiration = DateTime.UtcNow.AddDays(1),
+			IsEmailConfirmed = false
 		};
 
 		await _usersCollection.InsertOneAsync(user);
-		return Ok("User registered successfully");
+
+		var confirmationLink = $"{Request.Scheme}://{Request.Host}/confirm-email?token={emailConfirmationToken}";
+		await _emailService.SendEmailAsync(user.Email, "Confirm Your Email",
+			$"Click here to confirm your email: {confirmationLink}");
+
+		return Ok("User registered successfully. Please check your email to confirm your account.");
 	}
 
 	[AllowAnonymous]
@@ -76,7 +85,7 @@ public class AuthController : ControllerBase
 			return Unauthorized("Invalid credentials.");
 
 		var token = CreateToken(user);
-		return Ok(new { token, user.Id });
+		return Ok(new { token, user.Id, user.IsEmailConfirmed });
 	}
 
 	[AllowAnonymous]
@@ -85,7 +94,11 @@ public class AuthController : ControllerBase
 	{
 		email = email.ToLower();
 		var user = await _usersCollection.Find(u => u.Email == email).FirstOrDefaultAsync();
+
 		if (user == null) return NotFound("No user found with this email.");
+
+		if (!user.IsEmailConfirmed)
+			return BadRequest("Please confirm your email before resetting your password.");
 
 		var resetToken = Guid.NewGuid().ToString();
 		user.PasswordResetToken = resetToken;
@@ -157,6 +170,52 @@ public class AuthController : ControllerBase
 
 		return Ok("Profile updated successfully.");
 	}
+
+	[AllowAnonymous]
+	[HttpGet("confirm-email")]
+	public async Task<IActionResult> ConfirmEmail([FromQuery] string token)
+	{
+		if (string.IsNullOrEmpty(token)) return BadRequest("Invalid token.");
+
+		var user = await _usersCollection
+			.Find(u => u.EmailConfirmationToken == token && u.EmailConfirmationExpiration > DateTime.UtcNow)
+			.FirstOrDefaultAsync();
+
+		if (user == null) return BadRequest("Invalid or expired token.");
+
+		user.IsEmailConfirmed = true;
+		user.EmailConfirmationToken = null;
+		user.EmailConfirmationExpiration = null;
+
+		await _usersCollection.ReplaceOneAsync(u => u.Id == user.Id, user);
+
+		return Ok("Email confirmed successfully.");
+	}
+
+	[AllowAnonymous]
+	[HttpPost("resend-confirmation-email")]
+	public async Task<IActionResult> ResendConfirmationEmail([FromBody] string email)
+	{
+		email = email.ToLower();
+		var user = await _usersCollection.Find(u => u.Email == email).FirstOrDefaultAsync();
+
+		if (user == null) return NotFound("No user found with this email.");
+
+		if (user.IsEmailConfirmed) return BadRequest("Email is already confirmed.");
+
+		var emailConfirmationToken = Guid.NewGuid().ToString();
+		user.EmailConfirmationToken = emailConfirmationToken;
+		user.EmailConfirmationExpiration = DateTime.UtcNow.AddDays(1);
+
+		await _usersCollection.ReplaceOneAsync(u => u.Id == user.Id, user);
+
+		var confirmationLink = $"{Request.Scheme}://{Request.Host}/confirm-email?token={emailConfirmationToken}";
+		await _emailService.SendEmailAsync(user.Email, "Confirm Your Email",
+			$"Click here to confirm your email: {confirmationLink}");
+
+		return Ok("Confirmation email resent successfully.");
+	}
+
 
 	private string CreateToken(User user)
 	{
