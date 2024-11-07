@@ -100,12 +100,6 @@ namespace GrowMateApi
 
 			var app = builder.Build();
 
-			using (var scope = app.Services.CreateScope())
-			{
-				var database = scope.ServiceProvider.GetRequiredService<IMongoDatabase>();
-				SeedData.Initialize(database).Wait();
-			}
-
 			// Configure the HTTP request pipeline.
 			if (app.Environment.IsDevelopment())
 			{
