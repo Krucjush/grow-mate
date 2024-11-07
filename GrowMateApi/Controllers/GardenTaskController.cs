@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using GrowMateApi.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using MongoDB.Driver;
 
@@ -7,10 +8,12 @@ using MongoDB.Driver;
 public class GardenTaskController : ControllerBase
 {
 	private readonly IMongoCollection<GardenTask> _tasksCollection;
+	private readonly IMongoCollection<PlantTrackingLog> _trackingLogsCollection;
 
 	public GardenTaskController(IMongoDatabase database)
 	{
 		_tasksCollection = database.GetCollection<GardenTask>("GardenTasks");
+		_trackingLogsCollection = database.GetCollection<PlantTrackingLog>("PlantTrackingLogs");
 	}
 
 	[Authorize]
@@ -33,11 +36,30 @@ public class GardenTaskController : ControllerBase
 	[HttpPut("{id}")]
 	public async Task<IActionResult> Update(string id, GardenTask task)
 	{
+		var existingTask = await _tasksCollection.Find(t => t.Id == id).FirstOrDefaultAsync();
+		if (existingTask == null) return NotFound();
+
+		var isTaskCompletion = !existingTask.IsCompleted && task.IsCompleted;
+
 		var result = await _tasksCollection.ReplaceOneAsync(t => t.Id == id, task);
 		if (result.MatchedCount == 0)
 		{
 			return NotFound();
 		}
+
+		if (isTaskCompletion)
+		{
+			var trackingLog = new PlantTrackingLog
+			{
+				PlantId = task.PlantId,
+				EventDate = DateTime.UtcNow,
+				EventType = task.TaskType,
+				Notes = task.Notes
+			};
+
+			await _trackingLogsCollection.InsertOneAsync(trackingLog);
+		}
+
 		return Ok(task);
 	}
 

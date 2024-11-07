@@ -6,4 +6,7 @@
 	public string PlantId { get; set; }
 	public DateTime ScheduledTime { get; set; }
 	public bool IsCompleted { get; set; }
+	public string TaskType { get; set; }
+	public TimeSpan? RecurrenceInterval { get; set; }
+	public string? Notes { get; set; }
 }

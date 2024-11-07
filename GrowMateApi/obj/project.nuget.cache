@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "dgSpecHash": "efjSSU/a82cELVDBpF0nqaL5BlmBLxsVEVnlXq8p6lqjRLEMD1h3zoY3pYqT5GfrHzA4t7d18GYzYuIrxOFzcg==",
+  "dgSpecHash": "OsUKG/eYIm8Dd0MWQiCe9pC37tJc4g06SLAMgzgloalszQIjnXgYlSsjAzSTtftWL/sBdGdAefQ6jBY+o8mx8A==",
   "success": true,
   "projectFilePath": "C:\\Users\\hiewi\\source\\repos\\grow-mate\\GrowMateApi\\GrowMateApi.csproj",
   "expectedPackageFiles": [
@@ -20,6 +20,7 @@
     "C:\\Users\\hiewi\\.nuget\\packages\\microsoft.identitymodel.tokens\\8.0.2\\microsoft.identitymodel.tokens.8.0.2.nupkg.sha512",
     "C:\\Users\\hiewi\\.nuget\\packages\\microsoft.netcore.platforms\\5.0.0\\microsoft.netcore.platforms.5.0.0.nupkg.sha512",
     "C:\\Users\\hiewi\\.nuget\\packages\\microsoft.openapi\\1.4.3\\microsoft.openapi.1.4.3.nupkg.sha512",
+    "C:\\Users\\hiewi\\.nuget\\packages\\microsoft.visualstudio.azure.containers.tools.targets\\1.17.0\\microsoft.visualstudio.azure.containers.tools.targets.1.17.0.nupkg.sha512",
     "C:\\Users\\hiewi\\.nuget\\packages\\microsoft.win32.registry\\5.0.0\\microsoft.win32.registry.5.0.0.nupkg.sha512",
     "C:\\Users\\hiewi\\.nuget\\packages\\mongodb.bson\\2.28.0\\mongodb.bson.2.28.0.nupkg.sha512",
     "C:\\Users\\hiewi\\.nuget\\packages\\mongodb.driver\\2.28.0\\mongodb.driver.2.28.0.nupkg.sha512",

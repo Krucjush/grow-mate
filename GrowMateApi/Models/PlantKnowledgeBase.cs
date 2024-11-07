@@ -1,4 +1,6 @@
-﻿public class PlantKnowledgeBase
+﻿using GrowMateApi.Models.Templates;
+
+public class PlantKnowledgeBase
 {
 	public string Id { get; set; }
 	public string Name { get; set; }
@@ -10,4 +12,5 @@
 	public string WateringIntensity { get; set; }
 	public PlantingSeason TypicalPlantingSeason { get; set; }
 	public string? ImageUrl { get; set; }
+	public List<GardenTaskTemplate>? SuggestedTasks { get; set; } = new();
 }
