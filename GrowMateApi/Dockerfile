@@ -10,10 +10,10 @@ EXPOSE 443
 
 FROM mcr.microsoft.com/dotnet/sdk:7.0 AS build
 WORKDIR /src
-COPY ["GrowMateApi.csproj", "."]
-RUN dotnet restore "./GrowMateApi.csproj"
+COPY ["GrowMateApi/GrowMateApi.csproj", "GrowMateApi/"]
+RUN dotnet restore "GrowMateApi/GrowMateApi.csproj"
 COPY . .
-WORKDIR "/src/."
+WORKDIR "/src/GrowMateApi"
 RUN dotnet build "GrowMateApi.csproj" -c Release -o /app/build
 
 FROM build AS publish
