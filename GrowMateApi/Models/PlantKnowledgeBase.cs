@@ -1,4 +1,7 @@
-﻿using GrowMateApi.Models.Templates;
+﻿using GrowMateApi.Models.Enums;
+using GrowMateApi.Models.Templates;
+
+namespace GrowMateApi.Models;
 
 public class PlantKnowledgeBase
 {

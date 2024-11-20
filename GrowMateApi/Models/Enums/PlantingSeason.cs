@@ -1,4 +1,6 @@
-﻿public enum PlantingSeason
+﻿namespace GrowMateApi.Models.Enums;
+
+public enum PlantingSeason
 {
 	Spring,
 	Summer,

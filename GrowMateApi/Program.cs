@@ -96,6 +96,8 @@ namespace GrowMateApi
 				});
 			});
 
+			builder.Services.AddScoped<IGardenTemplateService, GardenTemplateService>();
+
 			builder.Services.AddControllers();
 
 			var app = builder.Build();

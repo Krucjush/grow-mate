@@ -9,6 +9,7 @@ using GrowMateApi.Models.Dtos;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.IdentityModel.Tokens;
 using Amazon.Runtime.Internal;
+using GrowMateApi.Models;
 
 
 [Route("api/[controller]")]

@@ -1,4 +1,6 @@
-﻿public class GardenTask
+﻿namespace GrowMateApi.Models;
+
+public class GardenTask
 {
 	public string Id { get; set; }
 	public string UserId { get; set; }

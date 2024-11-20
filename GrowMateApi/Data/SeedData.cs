@@ -1,4 +1,6 @@
-﻿using MongoDB.Driver;
+﻿using GrowMateApi.Models;
+using GrowMateApi.Models.Enums;
+using MongoDB.Driver;
 using MongoDB.Bson;
 
 public static class SeedData

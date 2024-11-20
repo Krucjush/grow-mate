@@ -1,4 +1,6 @@
-﻿public class SoilParameters
+﻿namespace GrowMateApi.Models;
+
+public class SoilParameters
 {
 	public string Type { get; set; }
 	public string pHLevel { get; set; }

@@ -1,16 +1,22 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using GrowMateApi.Interfaces;
+using GrowMateApi.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using MongoDB.Driver;
+
+namespace GrowMateApi.Controllers;
 
 [Route("api/[controller]")]
 [ApiController]
 public class GardensController : ControllerBase
 {
 	private readonly IMongoCollection<Garden> _gardensCollection;
+	private readonly IGardenTemplateService _gardenTemplateService;
 
-	public GardensController(IMongoDatabase database)
+	public GardensController(IMongoDatabase database, IGardenTemplateService gardenTemplateService)
 	{
 		_gardensCollection = database.GetCollection<Garden>("Gardens");
+		_gardenTemplateService = gardenTemplateService;
 	}
 
 	[Authorize]
@@ -23,9 +29,24 @@ public class GardensController : ControllerBase
 
 	[Authorize]
 	[HttpPost]
-	public async Task<IActionResult> Create(Garden garden)
+	public async Task<IActionResult> Create([FromBody] Garden garden)
 	{
+		if (!string.IsNullOrEmpty(garden.TemplateId))
+		{
+			var template = _gardenTemplateService.GetTemplateById(garden.TemplateId);
+
+			if (template == null)
+			{
+				return BadRequest("Template not found.");
+			}
+
+			garden.Description ??= template.Description;
+		}
+
+		garden.CreatedAt = DateTime.UtcNow;
+
 		await _gardensCollection.InsertOneAsync(garden);
+
 		return CreatedAtAction(nameof(Get), new { id = garden.Id }, garden);
 	}
 
@@ -73,6 +94,7 @@ public class GardensController : ControllerBase
 		return Ok(gardens);
 	}
 
+	//testing if works bring back the previous implementation
 	[Authorize]
 	[HttpPost("{gardenId}/plants")]
 	public async Task<IActionResult> AddPlant(string gardenId, [FromBody] Plant plant)
@@ -85,7 +107,7 @@ public class GardensController : ControllerBase
 
 		garden.Plants.Add(plant);
 
-		var result = await _gardensCollection.ReplaceOneAsync(g => g.Id == gardenId, garden);
+		//var result = await _gardensCollection.ReplaceOneAsync(g => g.Id == gardenId, garden);
 
 		//if (result.MatchedCount == 0)
 		//{

@@ -1,4 +1,4 @@
-using GrowMateApi.Models;
+namespace GrowMateApi.Models;
 
 public class Plant
 {
@@ -7,5 +7,5 @@ public class Plant
 	public string KnowledgeBaseId { get; set; }
 	public DateTime LastWatered { get; set; }
 	public DateTime DatePlanted { get; set; }
-	public List<PlantGrowthRecord> GrowthRecords { get; set; } = new List<PlantGrowthRecord>();
+	public List<PlantGrowthRecord> GrowthRecords { get; set; } = new();
 }
