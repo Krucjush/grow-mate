@@ -27,15 +27,26 @@ const PlantsScreen: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState<string>(""); // Search query
+  const [debouncedQuery, setDebouncedQuery] = useState<string>(""); // Debounced query
+  const [page, setPage] = useState<number>(1); // Track current page
   const apiUrl = process.env.EXPO_PUBLIC_API_URL;
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedQuery(searchQuery); // Update debouncedQuery after delay
+    }, 500); // 500ms delay
+
+    return () => clearTimeout(timer); // Clear timeout if query changes before delay ends
+  }, [searchQuery]);
 
   useEffect(() => {
     const fetchPlants = async () => {
       try {
-        console.log(apiUrl);
-        const response = await fetch(`${apiUrl}`);
+        setLoading(true);
+        const queryParam = debouncedQuery ? `&q=${debouncedQuery}` : ""; // Add debounced query if present
+        const response = await fetch(`${apiUrl}&page=${page}${queryParam}`);
         const data = await response.json();
-        setPlants(data.data); // Accessing the 'data' array
+        setPlants(data.data); // Replace data on every fetch
       } catch (error) {
         setError("Failed to fetch plants");
       } finally {
@@ -44,7 +55,15 @@ const PlantsScreen: React.FC = () => {
     };
 
     fetchPlants();
-  }, []);
+  }, [debouncedQuery, page]); // Fetch plants when debouncedQuery or page changes
+
+  const handleNextPage = () => {
+    setPage((prevPage) => prevPage + 1);
+  };
+
+  const handlePreviousPage = () => {
+    setPage((prevPage) => (prevPage > 1 ? prevPage - 1 : 1));
+  };
 
   if (loading) {
     return (
@@ -62,22 +81,16 @@ const PlantsScreen: React.FC = () => {
     );
   }
 
-  // Category buttons
-  const categories = [
-    "All plants",
-    "Tall plants",
-    "Low Light",
-    "Air Purifying",
-  ];
-
   return (
     <View style={styles.container}>
-      <TextInput
-        style={styles.searchInput}
-        placeholder="Search"
-        value={searchQuery}
-        onChangeText={(text) => setSearchQuery(text)}
-      />
+      <View style={styles.searchContainer}>
+        <TextInput
+          style={styles.searchInput}
+          placeholder="Search"
+          value={searchQuery}
+          onChangeText={(text) => setSearchQuery(text)}
+        />
+      </View>
 
       <Text style={styles.heading}>Best Indoor Plants</Text>
 
@@ -110,6 +123,22 @@ const PlantsScreen: React.FC = () => {
           </View>
         )}
       />
+
+      <View style={styles.paginationContainer}>
+        <TouchableOpacity
+          style={[styles.paginationButton, page === 1 && styles.disabledButton]}
+          onPress={handlePreviousPage}
+          disabled={page === 1}
+        >
+          <Text style={styles.paginationText}>Previous</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={styles.paginationButton}
+          onPress={handleNextPage}
+        >
+          <Text style={styles.paginationText}>Next</Text>
+        </TouchableOpacity>
+      </View>
     </View>
   );
 };
@@ -120,26 +149,18 @@ const styles = StyleSheet.create({
     padding: 16,
     backgroundColor: "#fff",
   },
+  searchContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 16,
+  },
   searchInput: {
+    flex: 1,
     height: 40,
     borderColor: "#ddd",
     borderWidth: 1,
     borderRadius: 8,
     paddingHorizontal: 10,
-    marginBottom: 16,
-  },
-  categoryList: {
-    marginBottom: 16,
-  },
-  categoryButton: {
-    backgroundColor: "#f0f0f0",
-    padding: 10,
-    borderRadius: 20,
-    marginRight: 10,
-  },
-  categoryText: {
-    fontSize: 16,
-    fontWeight: "bold",
   },
   heading: {
     fontSize: 20,
@@ -175,6 +196,27 @@ const styles = StyleSheet.create({
   },
   heartIcon: {
     padding: 8,
+  },
+  paginationContainer: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginTop: 16,
+  },
+  paginationButton: {
+    flex: 1,
+    padding: 12,
+    marginHorizontal: 8,
+    backgroundColor: "#007BFF",
+    borderRadius: 8,
+    alignItems: "center",
+  },
+  paginationText: {
+    color: "#fff",
+    fontWeight: "bold",
+    fontSize: 16,
+  },
+  disabledButton: {
+    backgroundColor: "#ccc",
   },
 });
 

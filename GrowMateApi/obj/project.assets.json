@@ -1671,24 +1671,19 @@
     ]
   },
   "packageFolders": {
-    "C:\\Users\\hiewi\\.nuget\\packages\\": {},
-    "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages": {}
+    "C:\\Users\\jakub\\.nuget\\packages\\": {}
   },
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "C:\\Users\\hiewi\\source\\repos\\grow-mate\\GrowMateApi\\GrowMateApi.csproj",
+      "projectUniqueName": "C:\\Users\\jakub\\OneDrive\\Pulpit\\GrowMate\\grow-mate\\GrowMateApi\\GrowMateApi.csproj",
       "projectName": "GrowMateApi",
-      "projectPath": "C:\\Users\\hiewi\\source\\repos\\grow-mate\\GrowMateApi\\GrowMateApi.csproj",
-      "packagesPath": "C:\\Users\\hiewi\\.nuget\\packages\\",
-      "outputPath": "C:\\Users\\hiewi\\source\\repos\\grow-mate\\GrowMateApi\\obj\\",
+      "projectPath": "C:\\Users\\jakub\\OneDrive\\Pulpit\\GrowMate\\grow-mate\\GrowMateApi\\GrowMateApi.csproj",
+      "packagesPath": "C:\\Users\\jakub\\.nuget\\packages\\",
+      "outputPath": "C:\\Users\\jakub\\OneDrive\\Pulpit\\GrowMate\\grow-mate\\GrowMateApi\\obj\\",
       "projectStyle": "PackageReference",
-      "fallbackFolders": [
-        "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
-      ],
       "configFilePaths": [
-        "C:\\Users\\hiewi\\AppData\\Roaming\\NuGet\\NuGet.Config",
-        "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
+        "C:\\Users\\jakub\\AppData\\Roaming\\NuGet\\NuGet.Config",
         "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
       ],
       "originalTargetFrameworks": [
@@ -1708,6 +1703,11 @@
         "warnAsError": [
           "NU1605"
         ]
+      },
+      "restoreAuditProperties": {
+        "enableAudit": "true",
+        "auditLevel": "low",
+        "auditMode": "direct"
       }
     },
     "frameworks": {
@@ -1762,7 +1762,7 @@
             "privateAssets": "all"
           }
         },
-        "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\7.0.102\\RuntimeIdentifierGraph.json"
+        "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\8.0.204\\RuntimeIdentifierGraph.json"
       }
     }
   }

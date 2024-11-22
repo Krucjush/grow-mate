@@ -8,12 +8,15 @@ import {
   Image,
   Button,
   Alert,
+  Dimensions,
 } from "react-native";
 
 import { useNavigation, useRoute } from "@react-navigation/native";
 import { useEffect, useState } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useAuth } from "@/components/AuthContext";
+import { automateTasks } from "@/components/TaskAutomation";
+import React from "react";
 
 // Define the types for the data structure
 interface UserGarden {
@@ -49,6 +52,8 @@ interface GardenTask {
 
 // Main component
 const UserGardenScreen: React.FC = () => {
+  const [weatherData, setWeatherData] = useState<any[]>([]);
+
   const [userGarden, setUserGarden] = useState<UserGarden | null>(null);
   const [gardenTasks, setGardenTasks] = useState<GardenTask[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
@@ -59,7 +64,10 @@ const UserGardenScreen: React.FC = () => {
   const navigation = useNavigation();
   const apiUrl = process.env.EXPO_PUBLIC_API;
   console.log("UserGardenScreen received userId:", userId);
-  const Logo = require("@/assets/images/plant-image.png"); // Update with the correct path or URL
+  const Logo = require("@/assets/images/plant-image.png");
+  const api =
+    "https://weather.visualcrossing.com/VisualCrossingWebServices/rest/services/timeline/Krak%C3%B3w/2024-11-21/2024-11-24?unitGroup=metric&key=XLK6GQF68ER2YAU3NR6XUZFMY";
+  // Update with the correct path or URL
   // Fetch the garden data and tasks from the API or server
   useEffect(() => {
     const fetchGardenData = async () => {
@@ -113,6 +121,72 @@ const UserGardenScreen: React.FC = () => {
 
     fetchGardenData();
   }, [userId]);
+  useEffect(() => {
+    const fetchWeatherData = async () => {
+      try {
+        const response = await fetch(`${api}`);
+        const data = await response.json();
+
+        const formattedData = data.days.map((day: any) => ({
+          datetime: day.datetime,
+          temp: day.temp,
+          conditions: day.conditions,
+          humidity: day.humidity,
+          icon: day.icon, // Replace later
+        }));
+
+        setWeatherData(formattedData);
+        setLoading(false);
+      } catch (error) {
+        setError("Failed to fetch weather data");
+        setLoading(false);
+      }
+    };
+
+    fetchWeatherData();
+  }, []);
+  useEffect(() => {
+    const scheduleTasks = async () => {
+      if (userGarden) {
+        const plantIds = userGarden.plants.map((plant) => plant.id);
+        console.log("task userid" + plantIds); // Get all plant IDs
+        await automateTasks(userId, plantIds);
+      }
+    };
+
+    scheduleTasks();
+  }, [userGarden]);
+
+  const WeatherCard = ({ item }: { item: any }) => (
+    <View style={styles.card}>
+      <Text style={styles.date}>{item.datetime}</Text>
+      <Image
+        source={{
+          uri: `https://cdn2.iconfinder.com/data/icons/weather-flat-14/64/weather02-512.png`, // Replace later
+        }}
+        style={styles.icon}
+      />
+      <Text style={styles.temperature}>{item.temp}°C</Text>
+      <Text style={styles.conditions}>{item.conditions}</Text>
+      <Text style={styles.humidity}>Humidity: {item.humidity}%</Text>
+    </View>
+  );
+
+  if (loading) {
+    return (
+      <View style={styles.center}>
+        <ActivityIndicator size="large" color="#0000ff" />
+      </View>
+    );
+  }
+
+  if (error) {
+    return (
+      <View style={styles.center}>
+        <Text style={styles.errorText}>{error}</Text>
+      </View>
+    );
+  }
 
   // Function to mark a task as completed
   const markTaskAsCompleted = async (taskId: string) => {
@@ -151,7 +225,9 @@ const UserGardenScreen: React.FC = () => {
   const renderPlant = ({ item }: { item: UserPlant }) => (
     <View style={styles.plantItem}>
       <Image
-        source={{ uri: "https://via.placeholder.com/150" }} // Temporary image placeholder
+        source={{
+          uri: "https://images.rawpixel.com/image_png_800/cHJpdmF0ZS9sci9pbWFnZXMvd2Vic2l0ZS8yMDIzLTEwL3Jhd3BpeGVsX29mZmljZV8zMl9waG90b19vZl9hX3BsYW50X2luX2hvbWVfaXNvbGF0ZWRfb25fd2hpdGVfYl83YmViOTc1OC0wYjJlLTQzYmUtYWYxZi03YjljODA3ZjI3MzRfMS5wbmc.png",
+        }} // Temporary image placeholder
         style={styles.plantImage}
       />
       <View style={styles.plantDetails}>
@@ -206,6 +282,14 @@ const UserGardenScreen: React.FC = () => {
   return (
     <ScrollView style={styles.container}>
       <Image source={Logo} style={styles.logo} />
+      <FlatList
+        data={weatherData}
+        renderItem={({ item }) => <WeatherCard item={item} />}
+        keyExtractor={(item) => item.datetime}
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.listContainer}
+      />
       {userGarden && (
         <View style={styles.gardenContainer}>
           <Text style={styles.gardenTitle}>Garden Name: {userGarden.name}</Text>
@@ -343,6 +427,43 @@ const styles = StyleSheet.create({
     height: 100,
     alignSelf: "center",
     marginVertical: 20,
+  },
+  card: {
+    backgroundColor: "#ffffff",
+    borderRadius: 8,
+    padding: 16,
+    marginHorizontal: 10,
+    alignItems: "center",
+    width: Dimensions.get("window").width * 0.2, // Adjust card width
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 5,
+    elevation: 3,
+  },
+  date: {
+    fontSize: 14,
+    color: "#666",
+    marginBottom: 8,
+  },
+  icon: {
+    width: 50,
+    height: 50,
+    marginBottom: 8,
+  },
+  temperature: {
+    fontSize: 20,
+    fontWeight: "bold",
+    marginBottom: 4,
+  },
+  conditions: {
+    fontSize: 16,
+    color: "#333",
+    marginBottom: 4,
+  },
+  humidity: {
+    fontSize: 14,
+    color: "#888",
   },
 });
 
