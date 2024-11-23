@@ -25,7 +25,7 @@ namespace GrowMateApi.Controllers
 			_notificationsCollection = database.GetCollection<Notification>("Notifications");
 			_growthRecordCollection = database.GetCollection<PlantGrowthRecord>("GrowthRecords");
 			_gardensCollection = database.GetCollection<Garden>("Gardens");
-	    }
+		}
 
 		[AllowAnonymous]
 		[HttpGet]
@@ -175,6 +175,20 @@ namespace GrowMateApi.Controllers
 			}
 
 			return Ok(plant.GrowthRecords);
+		}
+
+		[Authorize]
+		[HttpGet("plants/{plantId}/tasks")]
+		public async Task<IActionResult> GetTasksForPlant(string plantId)
+		{
+			var tasks = await _tasksCollection.Find(t => t.PlantId == plantId).ToListAsync();
+
+			if (tasks == null || !tasks.Any())
+			{
+				return NotFound("No tasks found for this plant.");
+			}
+
+			return Ok(tasks);
 		}
 	}
 }
