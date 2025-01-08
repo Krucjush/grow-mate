@@ -11,6 +11,7 @@ import {
   Dimensions,
   TextInput,
   Platform,
+  TouchableOpacity,
 } from "react-native";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import DatePicker from "react-datepicker"; // For web
@@ -67,6 +68,7 @@ const UserGardenScreen: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [isDatePickerVisible, setDatePickerVisibility] = useState(false);
+  const [isFormVisible, setIsFormVisible] = useState(false);
   const [newTask, setNewTask] = useState<GardenTask>({
     id: "",
     userId: "",
@@ -250,7 +252,7 @@ const UserGardenScreen: React.FC = () => {
         style={styles.plantImage}
       />
       <View style={styles.plantDetails}>
-        <Text style={styles.plantName}>Plant Name {item.name}</Text>
+        <Text style={styles.plantName}>{item.name}</Text>
         <Text style={styles.plantInfo}>
           Last Watered: {new Date(item.lastWatered).toLocaleDateString()}
         </Text>
@@ -363,7 +365,6 @@ const UserGardenScreen: React.FC = () => {
   // Render the garden information and tasks
   return (
     <ScrollView style={styles.container}>
-      <Image source={Logo} style={styles.logo} />
       <FlatList
         data={weatherData}
         renderItem={({ item }) => <WeatherCard item={item} />}
@@ -419,66 +420,76 @@ const UserGardenScreen: React.FC = () => {
       )}
       {userGarden && (
         <View style={styles.gardenContainer}>
-          <Text style={styles.sectionTitle}>Add New Task</Text>
-          <View style={styles.formContainer}>
-            <Text style={styles.label}>Task Name</Text>
-            <TextInput
-              style={styles.input}
-              value={newTask.taskName}
-              onChangeText={(text) =>
-                setNewTask((prev) => ({ ...prev, taskName: text }))
-              }
-              placeholder="Enter task name"
-            />
-
-            <Text style={styles.label}>Plant ID</Text>
-            <TextInput
-              style={styles.input}
-              value={newTask.plantId}
-              onChangeText={(text) =>
-                setNewTask((prev) => ({ ...prev, plantId: text }))
-              }
-              placeholder="Enter plant ID"
-            />
-
-            <Text style={styles.label}>Scheduled Time</Text>
-            {Platform.OS === "web" ? (
-              <DatePicker
-                selected={new Date(newTask.scheduledTime)}
-                onChange={handleWebDateChange}
-                showTimeSelect
-                dateFormat="Pp"
-                className="web-datepicker"
-              />
-            ) : (
-              <>
-                <Button title="Pick a Date" onPress={showDatePicker} />
-                {isDatePickerVisible && (
-                  <DateTimePicker
-                    value={new Date(newTask.scheduledTime)}
-                    mode="datetime"
-                    display="default"
-                    onChange={handleDateChange}
-                  />
-                )}
-              </>
-            )}
-            <Text style={styles.dateText}>
-              {new Date(newTask.scheduledTime).toLocaleString()}
+          <TouchableOpacity
+            style={styles.toggleButton}
+            onPress={() => setIsFormVisible((prev) => !prev)}
+          >
+            <Text style={styles.toggleButtonText}>
+              {isFormVisible ? "▼ Add New Task" : "► Add New Task"}
             </Text>
+          </TouchableOpacity>
 
-            <Text style={styles.label}>Notes</Text>
-            <TextInput
-              style={styles.input}
-              value={newTask.notes}
-              onChangeText={(text) =>
-                setNewTask((prev) => ({ ...prev, notes: text }))
-              }
-              placeholder="Enter any notes"
-            />
+          {isFormVisible && (
+            <View style={styles.formContainer}>
+              <Text style={styles.label}>Task Name</Text>
+              <TextInput
+                style={styles.input}
+                value={newTask.taskName}
+                onChangeText={(text) =>
+                  setNewTask((prev) => ({ ...prev, taskName: text }))
+                }
+                placeholder="Enter task name"
+              />
 
-            <Button title="Add Task" onPress={handleAddTask} />
-          </View>
+              <Text style={styles.label}>Plant ID</Text>
+              <TextInput
+                style={styles.input}
+                value={newTask.plantId}
+                onChangeText={(text) =>
+                  setNewTask((prev) => ({ ...prev, plantId: text }))
+                }
+                placeholder="Enter plant ID"
+              />
+
+              <Text style={styles.label}>Scheduled Time</Text>
+              {Platform.OS === "web" ? (
+                <DatePicker
+                  selected={new Date(newTask.scheduledTime)}
+                  onChange={handleWebDateChange}
+                  showTimeSelect
+                  dateFormat="Pp"
+                  className="web-datepicker"
+                />
+              ) : (
+                <>
+                  <Button title="Pick a Date" onPress={showDatePicker} />
+                  {isDatePickerVisible && (
+                    <DateTimePicker
+                      value={new Date(newTask.scheduledTime)}
+                      mode="datetime"
+                      display="default"
+                      onChange={handleDateChange}
+                    />
+                  )}
+                </>
+              )}
+              <Text style={styles.dateText}>
+                {new Date(newTask.scheduledTime).toLocaleString()}
+              </Text>
+
+              <Text style={styles.label}>Notes</Text>
+              <TextInput
+                style={styles.input}
+                value={newTask.notes}
+                onChangeText={(text) =>
+                  setNewTask((prev) => ({ ...prev, notes: text }))
+                }
+                placeholder="Enter any notes"
+              />
+
+              <Button title="Add Task" onPress={handleAddTask} />
+            </View>
+          )}
         </View>
       )}
     </ScrollView>
@@ -629,6 +640,17 @@ const styles = StyleSheet.create({
     padding: 10,
     marginBottom: 10,
     backgroundColor: "#fff",
+  },
+  toggleButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    padding: 10,
+    backgroundColor: "#f0f0f0",
+    borderRadius: 5,
+  },
+  toggleButtonText: {
+    fontSize: 16,
+    fontWeight: "bold",
   },
 });
 
