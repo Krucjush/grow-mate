@@ -60,50 +60,52 @@ const LoginScreen: React.FC = () => {
 
   return (
     <ParallaxScrollView
-    headerBackgroundColor={{ light: "#FFFFFF", dark: "#FFFFFF" }} // Kolor tła nagłówka
-    headerImage={
-      <Image
-        source={require("@/assets/images/image.png")} // Lokalny obrazek, upewnij się, że ścieżka do obrazu jest poprawna
-        style={{ width: "100%", height: "100%" }} // Ustawienie obrazu na pełny nagłówek
-        resizeMode="cover" // Dopasowanie obrazu do rozmiaru
-      />
-    }
-  >
-    <ScrollView
-      contentContainerStyle={[
-        styles.scrollViewContainer,
-        { backgroundColor: colorScheme === "dark" ? "#FFFFFF" : "#FFFFFF" },
-      ]}
+      headerBackgroundColor={{ light: "#FFFFFF", dark: "#FFFFFF" }} // Kolor tła nagłówka
+      headerImage={
+        <Image
+          source={require("@/assets/images/image.png")} // Lokalny obrazek, upewnij się, że ścieżka do obrazu jest poprawna
+          style={{ width: "100%", height: "100%" }} // Ustawienie obrazu na pełny nagłówek
+          resizeMode="cover" // Dopasowanie obrazu do rozmiaru
+        />
+      }
     >
-      <View style={styles.container}>
-        <Text style={styles.title}>Zaloguj się</Text>
-        <TextInput
-          style={styles.input}
-          value={email}
-          onChangeText={setEmail}
-          placeholder="Wpisz email"
-          placeholderTextColor="#888"
-          keyboardType="email-address"
-        />
-        <TextInput
-          style={styles.input}
-          value={password}
-          onChangeText={setPassword}
-          placeholder="Wpisz hasło"
-          placeholderTextColor="#888"
-          secureTextEntry
-        />
-        <TouchableOpacity style={styles.button} onPress={handleLogin}>
-          <Text style={styles.buttonText}>Zaloguj się</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={styles.loginLink}
-          onPress={() => navigation.navigate("Register")}
-        >
-          <Text style={styles.loginText}>Nie masz konta? Zarejestruj się</Text>
-        </TouchableOpacity>
-      </View>
-    </ScrollView>
+      <ScrollView
+        contentContainerStyle={[
+          styles.scrollViewContainer,
+          { backgroundColor: colorScheme === "dark" ? "#FFFFFF" : "#FFFFFF" },
+        ]}
+      >
+        <View style={styles.container}>
+          <Text style={styles.title}>Zaloguj się</Text>
+          <TextInput
+            style={styles.input}
+            value={email}
+            onChangeText={setEmail}
+            placeholder="Wpisz email"
+            placeholderTextColor="#888"
+            keyboardType="email-address"
+          />
+          <TextInput
+            style={styles.input}
+            value={password}
+            onChangeText={setPassword}
+            placeholder="Wpisz hasło"
+            placeholderTextColor="#888"
+            secureTextEntry
+          />
+          <TouchableOpacity style={styles.button} onPress={handleLogin}>
+            <Text style={styles.buttonText}>Zaloguj się</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.loginLink}
+            onPress={() => navigation.navigate("Register")}
+          >
+            <Text style={styles.loginText}>
+              Nie masz konta? Zarejestruj się
+            </Text>
+          </TouchableOpacity>
+        </View>
+      </ScrollView>
     </ParallaxScrollView>
   );
 };

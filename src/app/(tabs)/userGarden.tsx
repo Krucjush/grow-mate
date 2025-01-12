@@ -9,8 +9,13 @@ import {
   Button,
   Alert,
   Dimensions,
+  TextInput,
+  Platform,
+  TouchableOpacity,
 } from "react-native";
-
+import DateTimePicker from "@react-native-community/datetimepicker";
+import DatePicker from "react-datepicker"; // For web
+import "react-datepicker/dist/react-datepicker.css";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import { useEffect, useState } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -39,6 +44,7 @@ interface UserPlant {
   knowledgeBaseId: string;
   lastWatered: string;
   datePlanted: string;
+  name: string;
 }
 
 interface GardenTask {
@@ -46,8 +52,11 @@ interface GardenTask {
   userId: string;
   taskName: string;
   plantId: string;
+  taskType: string;
   scheduledTime: string;
   isCompleted: boolean;
+  recurrenceInterval: number;
+  notes: string;
 }
 
 // Main component
@@ -58,15 +67,28 @@ const UserGardenScreen: React.FC = () => {
   const [gardenTasks, setGardenTasks] = useState<GardenTask[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  const [isDatePickerVisible, setDatePickerVisibility] = useState(false);
+  const [isFormVisible, setIsFormVisible] = useState(false);
+  const [newTask, setNewTask] = useState<GardenTask>({
+    id: "",
+    userId: "",
+    taskName: "",
+    plantId: "",
+    scheduledTime: new Date().toISOString(),
+    isCompleted: false,
+    taskType: "",
+    recurrenceInterval: 0,
+    notes: "",
+  });
   const route = useRoute();
   const params = route.params as { userId?: string } | undefined;
   const { userId } = useAuth();
   const navigation = useNavigation();
   const apiUrl = process.env.EXPO_PUBLIC_API;
-  console.log("UserGardenScreen received userId:", userId);
+  const weatherApiUrl = process.env.EXPO_PUBLIC_API_WEATHER;
+
   const Logo = require("@/assets/images/plant-image.png");
-  const api =
-    "https://weather.visualcrossing.com/VisualCrossingWebServices/rest/services/timeline/Krak%C3%B3w/2024-11-21/2024-11-24?unitGroup=metric&key=XLK6GQF68ER2YAU3NR6XUZFMY";
+
   // Update with the correct path or URL
   // Fetch the garden data and tasks from the API or server
   useEffect(() => {
@@ -86,7 +108,6 @@ const UserGardenScreen: React.FC = () => {
         );
 
         const gardenData = await gardenResponse.json();
-        console.log("Fetched garden data: ", gardenData); // Log the full response
 
         if (gardenResponse.ok && gardenData.length > 0) {
           setUserGarden(gardenData[0]); // Access the first item in the array
@@ -121,30 +142,30 @@ const UserGardenScreen: React.FC = () => {
 
     fetchGardenData();
   }, [userId]);
-  useEffect(() => {
-    const fetchWeatherData = async () => {
-      try {
-        const response = await fetch(`${api}`);
-        const data = await response.json();
+  // useEffect(() => {
+  //   const fetchWeatherData = async () => {
+  //     try {
+  //       const response = await fetch(`${weatherApiUrl}`);
+  //       const data = await response.json();
 
-        const formattedData = data.days.map((day: any) => ({
-          datetime: day.datetime,
-          temp: day.temp,
-          conditions: day.conditions,
-          humidity: day.humidity,
-          icon: day.icon, // Replace later
-        }));
+  //       const formattedData = data.days.map((day: any) => ({
+  //         datetime: day.datetime,
+  //         temp: day.temp,
+  //         conditions: day.conditions,
+  //         humidity: day.humidity,
+  //         icon: day.icon, // Replace later
+  //       }));
 
-        setWeatherData(formattedData);
-        setLoading(false);
-      } catch (error) {
-        setError("Failed to fetch weather data");
-        setLoading(false);
-      }
-    };
+  //       setWeatherData(formattedData);
+  //       setLoading(false);
+  //     } catch (error) {
+  //       setError("Failed to fetch weather data 123");
+  //       setLoading(false);
+  //     }
+  //   };
 
-    fetchWeatherData();
-  }, []);
+  //   fetchWeatherData();
+  // }, []);
   useEffect(() => {
     const scheduleTasks = async () => {
       if (userGarden) {
@@ -231,7 +252,7 @@ const UserGardenScreen: React.FC = () => {
         style={styles.plantImage}
       />
       <View style={styles.plantDetails}>
-        <Text style={styles.plantName}>Plant Name</Text>
+        <Text style={styles.plantName}>{item.name}</Text>
         <Text style={styles.plantInfo}>
           Last Watered: {new Date(item.lastWatered).toLocaleDateString()}
         </Text>
@@ -259,6 +280,69 @@ const UserGardenScreen: React.FC = () => {
       )}
     </View>
   );
+  const handleAddTask = async () => {
+    try {
+      const token = await AsyncStorage.getItem("jwtToken");
+
+      const response = await fetch(`${apiUrl}/api/GardenTask`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          ...newTask,
+          scheduledTime: newTask.scheduledTime.toISOString(),
+        }),
+      });
+
+      if (response.ok) {
+        const createdTask = await response.json();
+        setGardenTasks((prevTasks) => [...prevTasks, createdTask]);
+        Alert.alert("Success", "Task added successfully!");
+        setNewTask({
+          id: "",
+          userId: userId,
+          taskName: "",
+          plantId: "",
+          scheduledTime: "",
+          isCompleted: false,
+          taskType: "",
+          recurrenceInterval: 0,
+          notes: "",
+        });
+      } else {
+        Alert.alert("Error", "Failed to add the task.");
+      }
+    } catch (error) {
+      Alert.alert("Error", "An error occurred while adding the task.");
+    }
+  };
+
+  const showDatePicker = () => {
+    if (Platform.OS === "web") {
+      // For web, no need to toggle visibility
+    } else {
+      setDatePickerVisibility(true); // For mobile
+    }
+  };
+
+  const handleDateChange = (event: any, selectedDate?: Date) => {
+    setDatePickerVisibility(false);
+    if (selectedDate) {
+      setNewTask((prev) => ({
+        ...prev,
+        scheduledTime: selectedDate,
+      }));
+    }
+  };
+
+  const handleWebDateChange = (date: Date) => {
+    setNewTask((prev) => ({
+      ...prev,
+      scheduledTime: date,
+    }));
+  };
 
   // Render loading spinner
   if (loading) {
@@ -281,7 +365,6 @@ const UserGardenScreen: React.FC = () => {
   // Render the garden information and tasks
   return (
     <ScrollView style={styles.container}>
-      <Image source={Logo} style={styles.logo} />
       <FlatList
         data={weatherData}
         renderItem={({ item }) => <WeatherCard item={item} />}
@@ -292,8 +375,8 @@ const UserGardenScreen: React.FC = () => {
       />
       {userGarden && (
         <View style={styles.gardenContainer}>
-          <Text style={styles.gardenTitle}>Garden Name: {userGarden.name}</Text>
-          <Text style={styles.gardenInfo}>Location: {userGarden.location}</Text>
+          <Text style={styles.gardenTitle}> {userGarden.name}</Text>
+          <Text style={styles.gardenInfo}> {userGarden.location}</Text>
 
           {/* Ensure that soil exists before trying to display it */}
           {userGarden.soil ? (
@@ -333,6 +416,80 @@ const UserGardenScreen: React.FC = () => {
             keyExtractor={(item) => item.id}
             contentContainerStyle={styles.taskList}
           />
+        </View>
+      )}
+      {userGarden && (
+        <View style={styles.gardenContainer}>
+          <TouchableOpacity
+            style={styles.toggleButton}
+            onPress={() => setIsFormVisible((prev) => !prev)}
+          >
+            <Text style={styles.toggleButtonText}>
+              {isFormVisible ? "▼ Add New Task" : "► Add New Task"}
+            </Text>
+          </TouchableOpacity>
+
+          {isFormVisible && (
+            <View style={styles.formContainer}>
+              <Text style={styles.label}>Task Name</Text>
+              <TextInput
+                style={styles.input}
+                value={newTask.taskName}
+                onChangeText={(text) =>
+                  setNewTask((prev) => ({ ...prev, taskName: text }))
+                }
+                placeholder="Enter task name"
+              />
+
+              <Text style={styles.label}>Plant ID</Text>
+              <TextInput
+                style={styles.input}
+                value={newTask.plantId}
+                onChangeText={(text) =>
+                  setNewTask((prev) => ({ ...prev, plantId: text }))
+                }
+                placeholder="Enter plant ID"
+              />
+
+              <Text style={styles.label}>Scheduled Time</Text>
+              {Platform.OS === "web" ? (
+                <DatePicker
+                  selected={new Date(newTask.scheduledTime)}
+                  onChange={handleWebDateChange}
+                  showTimeSelect
+                  dateFormat="Pp"
+                  className="web-datepicker"
+                />
+              ) : (
+                <>
+                  <Button title="Pick a Date" onPress={showDatePicker} />
+                  {isDatePickerVisible && (
+                    <DateTimePicker
+                      value={new Date(newTask.scheduledTime)}
+                      mode="datetime"
+                      display="default"
+                      onChange={handleDateChange}
+                    />
+                  )}
+                </>
+              )}
+              <Text style={styles.dateText}>
+                {new Date(newTask.scheduledTime).toLocaleString()}
+              </Text>
+
+              <Text style={styles.label}>Notes</Text>
+              <TextInput
+                style={styles.input}
+                value={newTask.notes}
+                onChangeText={(text) =>
+                  setNewTask((prev) => ({ ...prev, notes: text }))
+                }
+                placeholder="Enter any notes"
+              />
+
+              <Button title="Add Task" onPress={handleAddTask} />
+            </View>
+          )}
         </View>
       )}
     </ScrollView>
@@ -464,6 +621,36 @@ const styles = StyleSheet.create({
   humidity: {
     fontSize: 14,
     color: "#888",
+  },
+  formContainer: {
+    padding: 15,
+    backgroundColor: "#f9f9f9",
+    borderRadius: 10,
+    marginTop: 10,
+  },
+  label: {
+    fontSize: 14,
+    fontWeight: "bold",
+    marginBottom: 5,
+  },
+  input: {
+    borderWidth: 1,
+    borderColor: "#ccc",
+    borderRadius: 5,
+    padding: 10,
+    marginBottom: 10,
+    backgroundColor: "#fff",
+  },
+  toggleButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    padding: 10,
+    backgroundColor: "#f0f0f0",
+    borderRadius: 5,
+  },
+  toggleButtonText: {
+    fontSize: 16,
+    fontWeight: "bold",
   },
 });
 

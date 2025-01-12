@@ -8,8 +8,11 @@ import {
   Image,
   TextInput,
   TouchableOpacity,
+  Platform,
+  Alert,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons"; // Importing icons
+import { useAuth } from "@/components/AuthContext";
 
 interface Plant {
   id: number;
@@ -26,27 +29,28 @@ const PlantsScreen: React.FC = () => {
   const [plants, setPlants] = useState<Plant[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
-  const [searchQuery, setSearchQuery] = useState<string>(""); // Search query
-  const [debouncedQuery, setDebouncedQuery] = useState<string>(""); // Debounced query
-  const [page, setPage] = useState<number>(1); // Track current page
+  const [searchQuery, setSearchQuery] = useState<string>("");
+  const [debouncedQuery, setDebouncedQuery] = useState<string>("");
+  const [page, setPage] = useState<number>(1);
   const apiUrl = process.env.EXPO_PUBLIC_API_URL;
-
+  const gardenApiUrl = process.env.EXPO_PUBLIC_API;
+  const { userId } = useAuth();
   useEffect(() => {
     const timer = setTimeout(() => {
-      setDebouncedQuery(searchQuery); // Update debouncedQuery after delay
-    }, 500); // 500ms delay
+      setDebouncedQuery(searchQuery);
+    }, 500);
 
-    return () => clearTimeout(timer); // Clear timeout if query changes before delay ends
+    return () => clearTimeout(timer);
   }, [searchQuery]);
 
   useEffect(() => {
     const fetchPlants = async () => {
       try {
         setLoading(true);
-        const queryParam = debouncedQuery ? `&q=${debouncedQuery}` : ""; // Add debounced query if present
+        const queryParam = debouncedQuery ? `&q=${debouncedQuery}` : "";
         const response = await fetch(`${apiUrl}&page=${page}${queryParam}`);
         const data = await response.json();
-        setPlants(data.data); // Replace data on every fetch
+        setPlants(data.data);
       } catch (error) {
         setError("Failed to fetch plants");
       } finally {
@@ -55,7 +59,66 @@ const PlantsScreen: React.FC = () => {
     };
 
     fetchPlants();
-  }, [debouncedQuery, page]); // Fetch plants when debouncedQuery or page changes
+  }, [debouncedQuery, page]);
+
+  const handleAddToGarden = async (plant: Plant) => {
+    try {
+      const response = await fetch(
+        `${gardenApiUrl}/api/Gardens/${userId}/plants`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            plantId: plant.id,
+            commonName: plant.common_name,
+          }),
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error("Failed to add plant to your garden.");
+      }
+
+      const successMessage = `${plant.common_name} has been added to your garden.`;
+
+      if (Platform.OS === "web") {
+        alert(successMessage);
+      } else {
+        Alert.alert("Success", successMessage);
+      }
+    } catch (error) {
+      console.log(error);
+      const errorMessage = "Could not add the plant to your garden.";
+      if (Platform.OS === "web") {
+        alert(errorMessage);
+      } else {
+        Alert.alert("Error", errorMessage);
+      }
+    }
+  };
+
+  const confirmAddToGarden = (plant: Plant) => {
+    const confirmMessage = "Do you want to add this plant to your garden?";
+
+    if (Platform.OS === "web") {
+      const confirmed = window.confirm(confirmMessage);
+      if (confirmed) {
+        handleAddToGarden(plant);
+      }
+    } else {
+      Alert.alert(
+        "Confirmation",
+        confirmMessage,
+        [
+          { text: "Cancel", style: "cancel" },
+          { text: "OK", onPress: () => handleAddToGarden(plant) },
+        ],
+        { cancelable: true }
+      );
+    }
+  };
 
   const handleNextPage = () => {
     setPage((prevPage) => prevPage + 1);
@@ -117,7 +180,10 @@ const PlantsScreen: React.FC = () => {
               <Text>Watering: {item.watering}</Text>
             </View>
 
-            <TouchableOpacity style={styles.heartIcon}>
+            <TouchableOpacity
+              style={styles.heartIcon}
+              onPress={() => confirmAddToGarden(item)}
+            >
               <Ionicons name="heart-outline" size={24} color="black" />
             </TouchableOpacity>
           </View>
