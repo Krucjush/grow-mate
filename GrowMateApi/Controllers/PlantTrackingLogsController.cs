@@ -16,7 +16,7 @@ namespace GrowMateApi.Controllers
 
 		[Authorize]
 		[HttpGet("by-plant/{plantId}")]
-		public async Task<IActionResult> GetByPlantId(string plantId)
+		public async Task<IActionResult> GetByPlantId(int plantId)
 		{
 			var logs = await _trackingLogsCollection.Find(log => log.PlantId == plantId).ToListAsync();
 			return Ok(logs);

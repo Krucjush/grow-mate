@@ -2,6 +2,7 @@ using System.Text;
 using GrowMateApi.Interfaces;
 using GrowMateApi.Models;
 using GrowMateApi.Services;
+using GrowMateApi.Services.Settings;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
@@ -70,7 +71,7 @@ namespace GrowMateApi
 			builder.Services.AddEndpointsApiExplorer();
 			builder.Services.AddSwaggerGen(c =>
 			{
-				c.SwaggerDoc("v1", new OpenApiInfo { Title = "GrowMate API", Version = "v1"});
+				c.SwaggerDoc("v1", new OpenApiInfo { Title = "GrowMate API", Version = "v1" });
 				c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
 				{
 					Name = "Authorization",
@@ -95,6 +96,21 @@ namespace GrowMateApi
 					}
 				});
 			});
+
+			builder.Services.Configure<PlantApiSettings>(builder.Configuration.GetSection("PlantApi"));
+
+			builder.Services.AddHttpClient<PlantApiService>((serviceProvider, client) =>
+			{
+				var settings = serviceProvider.GetRequiredService<IOptions<PlantApiSettings>>().Value;
+				client.BaseAddress = new Uri(settings.BaseUrl);
+				client.DefaultRequestHeaders.Add("Authorization", $"Bearer {settings.ApiKey}");
+			});
+
+			builder.Services.AddHttpClient<WeatherApiService>();
+
+			builder.Services.AddMemoryCache();
+
+			builder.Services.AddHostedService<WeatherUpdateService>();
 
 			builder.Services.AddScoped<IGardenTemplateService, GardenTemplateService>();
 

@@ -8,7 +8,7 @@ namespace GrowMateApi.Models
 		[BsonId]
 		[BsonRepresentation(BsonType.ObjectId)]
 		public string Id { get; set; } = ObjectId.GenerateNewId().ToString();
-		public string PlantId { get; set; }
+		public int PlantId { get; set; }
 		public DateTime EventDate { get; set; }
 		public string EventType { get; set; }
 		public string? Notes { get; set; }
