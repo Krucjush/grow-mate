@@ -1,5 +1,7 @@
+using System.Security.Claims;
 using GrowMateApi.Models;
 using GrowMateApi.Models.Templates;
+using GrowMateApi.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using MongoDB.Driver;
@@ -11,20 +13,20 @@ namespace GrowMateApi.Controllers
 	public class PlantsController : ControllerBase
 	{
 		private readonly IMongoCollection<Plant> _plantsCollection;
-		private readonly IMongoCollection<PlantKnowledgeBase> _plantsKnowledgeBaseCollection;
 		private readonly IMongoCollection<GardenTask> _tasksCollection;
 		private readonly IMongoCollection<Notification> _notificationsCollection;
 		private readonly IMongoCollection<PlantGrowthRecord> _growthRecordCollection;
 		private readonly IMongoCollection<Garden> _gardensCollection;
+		private readonly PlantApiService _plantApiService;
 
-		public PlantsController(IMongoDatabase database)
+		public PlantsController(IMongoDatabase database, PlantApiService plantApiService)
 		{
 			_plantsCollection = database.GetCollection<Plant>("Plants");
-			_plantsKnowledgeBaseCollection = database.GetCollection<PlantKnowledgeBase>("PlantKnowledgeBase");
 			_tasksCollection = database.GetCollection<GardenTask>("GardenTasks");
 			_notificationsCollection = database.GetCollection<Notification>("Notifications");
 			_growthRecordCollection = database.GetCollection<PlantGrowthRecord>("GrowthRecords");
 			_gardensCollection = database.GetCollection<Garden>("Gardens");
+			_plantApiService = plantApiService;
 		}
 
 		[AllowAnonymous]
@@ -56,10 +58,10 @@ namespace GrowMateApi.Controllers
 		}
 
 		[AllowAnonymous]
-		[HttpGet("by-knowledge-base/{knowledgeBaseId}")]
-		public async Task<IActionResult> GetByKnowledgeBase(string knowledgeBaseId)
+		[HttpGet("by-api/{apiPlantId}")]
+		public async Task<IActionResult> GetByApiPlant(int apiPlantId)
 		{
-			var plants = await _plantsCollection.Find(p => p.KnowledgeBaseId == knowledgeBaseId).ToListAsync();
+			var plants = await _plantsCollection.Find(p => p.ApiPlantId == apiPlantId).ToListAsync();
 			return Ok(plants);
 		}
 
@@ -88,45 +90,81 @@ namespace GrowMateApi.Controllers
 		}
 
 		[Authorize]
-		[HttpPost("add-to-garden/{userId}/{plantId}")]
-		public async Task<IActionResult> AddPlantToUserGarden(string userId, string plantId)
+		[HttpPost("add-to-garden/{gardenId}/{plantId}")]
+		public async Task<IActionResult> AddPlantToUserGarden(string gardenId, int plantId)
 		{
-			var plantKnowledge = await _plantsKnowledgeBaseCollection
-				.Find(pk => pk.Id == plantId)
-				.FirstOrDefaultAsync();
-
-			if (plantKnowledge == null) return NotFound("Plant not found in knowledge base.");
-
-			var createdTasks = new List<GardenTask>();
-
-			foreach (var taskTemplate in plantKnowledge.SuggestedTasks)
+			var garden = await _gardensCollection.Find(g => g.Id == gardenId).FirstOrDefaultAsync();
+			if (garden == null)
 			{
-				var gardenTask = new GardenTask
-				{
-					UserId = userId,
-					PlantId = plantId,
-					TaskName = taskTemplate.TaskName,
-					TaskType = taskTemplate.TaskType,
-					ScheduledTime = DateTime.Now.Add(taskTemplate.RecurrenceInterval ?? TimeSpan.Zero),
-					IsCompleted = false,
-					Notes = taskTemplate.Notes
-				};
-
-				await _tasksCollection.InsertOneAsync(gardenTask);
-				createdTasks.Add(gardenTask);
-
-				var notification = new Notification
-				{
-					UserId = userId,
-					Message = $"You have a new task: {taskTemplate.TaskName}",
-					IsRead = false,
-					ScheduledTime = DateTime.Now.Add(taskTemplate.RecurrenceInterval ?? TimeSpan.Zero)
-				};
-
-				await _notificationsCollection.InsertOneAsync(notification);
+				return NotFound("Garden not found.");
 			}
 
-			return CreatedAtAction(nameof(AddPlantToUserGarden), new { userId, plantId }, createdTasks);
+			var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+			if (userId == null)
+			{
+				return Unauthorized("User ID not found in the token.");
+			}
+
+			if (garden.UserId != userId)
+			{
+				return Forbid("You do not have access to this garden.");
+			}
+
+			var plantData = await _plantApiService.GetPlantDataAsync(plantId);
+			if (plantData == null)
+			{
+				return NotFound("Plant not found in the external API.");
+			}
+
+			var plant = new Plant
+			{
+				Id = Guid.NewGuid().ToString(),
+				Name = plantData.CommonName,
+				ApiPlantId = plantId,
+				DatePlanted = DateTime.UtcNow,
+				LastWatered = DateTime.UtcNow,
+			};
+
+			garden.Plants ??= new List<Plant>();
+			garden.Plants.Add(plant);
+
+			await _gardensCollection.ReplaceOneAsync(g => g.Id == gardenId, garden);
+
+			var recurrenceInterval = plantData.Watering switch
+			{
+				"Frequent" => TimeSpan.FromDays(1),
+				"Average" => TimeSpan.FromDays(2),
+				_ => TimeSpan.FromDays(3)
+			};
+
+			var wateringTask = new GardenTask
+			{
+				Id = Guid.NewGuid().ToString(),
+				UserId = garden.UserId,
+				PlantId = plantId,
+				TaskName = "Watering",
+				TaskType = "Recurring",
+				ScheduledTime = DateTime.Now.Add(recurrenceInterval),
+				RecurrenceInterval = recurrenceInterval,
+				IsCompleted = false,
+				Notes = $"Water your plant '{plantData.CommonName}' regularly based on its needs."
+			};
+
+			await _tasksCollection.InsertOneAsync(wateringTask);
+
+			var notification = new Notification
+			{
+				Id = Guid.NewGuid().ToString(),
+				UserId = userId,
+				Message = $"You have a new task: Water your plant '{plantData.CommonName}'.",
+				IsRead = false,
+				ScheduledTime = wateringTask.ScheduledTime
+			};
+
+			await _notificationsCollection.InsertOneAsync(notification);
+
+			return CreatedAtAction(nameof(AddPlantToUserGarden), new { userId, plantId }, wateringTask);
 		}
 		[Authorize]
 		[HttpPost("add-growth-record/{userId}/{plantId}")]
@@ -179,7 +217,7 @@ namespace GrowMateApi.Controllers
 
 		[Authorize]
 		[HttpGet("plants/{plantId}/tasks")]
-		public async Task<IActionResult> GetTasksForPlant(string plantId)
+		public async Task<IActionResult> GetTasksForPlant(int plantId)
 		{
 			var tasks = await _tasksCollection.Find(t => t.PlantId == plantId).ToListAsync();
 
