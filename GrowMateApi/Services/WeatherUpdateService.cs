@@ -7,9 +7,7 @@
 
 		private static readonly HashSet<string> FrequentlyRequestedLocations = new()
 		{
-			"New York",
-			"London",
-			"Tokyo"
+			"Krakow"
 		};
 
 		public WeatherUpdateService(WeatherApiService weatherApiService, ILogger<WeatherUpdateService> logger)

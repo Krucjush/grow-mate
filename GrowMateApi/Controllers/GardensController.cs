@@ -99,20 +99,13 @@ public class GardensController : ControllerBase
 	[HttpPost("{gardenId}/plants")]
 	public async Task<IActionResult> AddPlant(string gardenId, [FromBody] Plant plant)
 	{
+		plant.Id = Guid.NewGuid().ToString();
+
 		var garden = await _gardensCollection.Find(g => g.Id == gardenId).FirstOrDefaultAsync();
-		//if (garden == null)
-		//{
-		//	return NotFound();
-		//}
 
 		garden.Plants.Add(plant);
 
-		//var result = await _gardensCollection.ReplaceOneAsync(g => g.Id == gardenId, garden);
-
-		//if (result.MatchedCount == 0)
-		//{
-		//	return NotFound();
-		//}
+		await _gardensCollection.ReplaceOneAsync(g => g.Id == gardenId, garden);
 
 		return Ok(garden);
 	}
