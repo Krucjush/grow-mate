@@ -4,7 +4,7 @@ namespace GrowMateApi.Models
 {
 	public class PlantData
 	{
-		public int Id { get; set; }
+		public string Id { get; set; }
 
 		[JsonPropertyName("common_name")]
 		public string CommonName { get; set; }

@@ -59,7 +59,7 @@ namespace GrowMateApi.Controllers
 
 		[AllowAnonymous]
 		[HttpGet("by-api/{apiPlantId}")]
-		public async Task<IActionResult> GetByApiPlant(int apiPlantId)
+		public async Task<IActionResult> GetByApiPlant(string apiPlantId)
 		{
 			var plants = await _plantsCollection.Find(p => p.ApiPlantId == apiPlantId).ToListAsync();
 			return Ok(plants);
@@ -91,7 +91,7 @@ namespace GrowMateApi.Controllers
 
 		[Authorize]
 		[HttpPost("add-to-garden/{gardenId}/{plantId}")]
-		public async Task<IActionResult> AddPlantToUserGarden(string gardenId, int plantId)
+		public async Task<IActionResult> AddPlantToUserGarden(string gardenId, string plantId)
 		{
 			var garden = await _gardensCollection.Find(g => g.Id == gardenId).FirstOrDefaultAsync();
 			if (garden == null)
@@ -217,7 +217,7 @@ namespace GrowMateApi.Controllers
 
 		[Authorize]
 		[HttpGet("plants/{plantId}/tasks")]
-		public async Task<IActionResult> GetTasksForPlant(int plantId)
+		public async Task<IActionResult> GetTasksForPlant(string plantId)
 		{
 			var tasks = await _tasksCollection.Find(t => t.PlantId == plantId).ToListAsync();
 

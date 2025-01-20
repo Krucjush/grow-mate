@@ -19,7 +19,7 @@ namespace GrowMateApi.Services
 			_apiSettings = apiSettings.Value;
 		}
 
-		public async Task<PlantData> GetPlantDataAsync(int plantId)
+		public async Task<PlantData> GetPlantDataAsync(string plantId)
 		{
 			if (_cache.TryGetValue($"Plant_{plantId}", out PlantData cachedData))
 			{
