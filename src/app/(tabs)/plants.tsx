@@ -62,6 +62,23 @@ const PlantsScreen: React.FC = () => {
   }, [debouncedQuery, page]);
 
   const handleAddToGarden = async (plant: Plant) => {
+    const currentDate = new Date().toISOString(); // Get the current date in ISO format
+
+    const plantData = {
+      id: plant.id.toString(), // Convert plant id to string
+      name: plant.common_name,
+      apiPlantId: plant.id, // Assuming apiPlantId is the same as plant.id
+      lastWatered: currentDate,
+      datePlanted: currentDate,
+      growthRecords: [
+        {
+          recordDate: currentDate,
+          notes: "string", // Add appropriate notes
+          photoUrl: "string", // Add photo URL if available
+        },
+      ],
+    };
+
     try {
       const response = await fetch(
         `${gardenApiUrl}/api/Gardens/${userId}/plants`,
@@ -70,10 +87,7 @@ const PlantsScreen: React.FC = () => {
           headers: {
             "Content-Type": "application/json",
           },
-          body: JSON.stringify({
-            plantId: plant.id,
-            commonName: plant.common_name,
-          }),
+          body: JSON.stringify(plantData),
         }
       );
 

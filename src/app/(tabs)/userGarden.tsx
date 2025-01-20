@@ -45,6 +45,7 @@ interface UserPlant {
   lastWatered: string;
   datePlanted: string;
   name: string;
+  imageUrl: string;
 }
 
 interface GardenTask {
@@ -142,30 +143,30 @@ const UserGardenScreen: React.FC = () => {
 
     fetchGardenData();
   }, [userId]);
-  // useEffect(() => {
-  //   const fetchWeatherData = async () => {
-  //     try {
-  //       const response = await fetch(`${weatherApiUrl}`);
-  //       const data = await response.json();
+  useEffect(() => {
+    const fetchWeatherData = async () => {
+      try {
+        const response = await fetch(`${weatherApiUrl}`);
+        const data = await response.json();
 
-  //       const formattedData = data.days.map((day: any) => ({
-  //         datetime: day.datetime,
-  //         temp: day.temp,
-  //         conditions: day.conditions,
-  //         humidity: day.humidity,
-  //         icon: day.icon, // Replace later
-  //       }));
+        const formattedData = data.days.map((day: any) => ({
+          datetime: day.datetime,
+          temp: day.temp,
+          conditions: day.conditions,
+          humidity: day.humidity,
+          icon: day.icon, // Replace later
+        }));
 
-  //       setWeatherData(formattedData);
-  //       setLoading(false);
-  //     } catch (error) {
-  //       setError("Failed to fetch weather data 123");
-  //       setLoading(false);
-  //     }
-  //   };
+        setWeatherData(formattedData);
+        setLoading(false);
+      } catch (error) {
+        setError("Failed to fetch weather data 123");
+        setLoading(false);
+      }
+    };
 
-  //   fetchWeatherData();
-  // }, []);
+    fetchWeatherData();
+  }, []);
   useEffect(() => {
     const scheduleTasks = async () => {
       if (userGarden) {
@@ -183,7 +184,7 @@ const UserGardenScreen: React.FC = () => {
       <Text style={styles.date}>{item.datetime}</Text>
       <Image
         source={{
-          uri: `https://cdn2.iconfinder.com/data/icons/weather-flat-14/64/weather02-512.png`, // Replace later
+          uri: item, // Replace later
         }}
         style={styles.icon}
       />
@@ -247,7 +248,7 @@ const UserGardenScreen: React.FC = () => {
     <View style={styles.plantItem}>
       <Image
         source={{
-          uri: "https://images.rawpixel.com/image_png_800/cHJpdmF0ZS9sci9pbWFnZXMvd2Vic2l0ZS8yMDIzLTEwL3Jhd3BpeGVsX29mZmljZV8zMl9waG90b19vZl9hX3BsYW50X2luX2hvbWVfaXNvbGF0ZWRfb25fd2hpdGVfYl83YmViOTc1OC0wYjJlLTQzYmUtYWYxZi03YjljODA3ZjI3MzRfMS5wbmc.png",
+          uri: item.imageUrl,
         }} // Temporary image placeholder
         style={styles.plantImage}
       />
