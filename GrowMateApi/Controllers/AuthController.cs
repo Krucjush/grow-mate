@@ -71,7 +71,7 @@ public class AuthController : ControllerBase
 
 		var defaultGarden = new Garden
 		{
-			Id = Guid.NewGuid().ToString(),
+			Id = user.Id, // Guid.NewGuid().ToString(),
 			UserId = user.Id,
 			Name = $"{user.Username}'s garden",
 			Plants = new List<Plant>(),
