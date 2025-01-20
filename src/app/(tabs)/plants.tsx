@@ -13,6 +13,7 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons"; // Importing icons
 import { useAuth } from "@/components/AuthContext";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 interface Plant {
   id: number;
@@ -65,21 +66,24 @@ const PlantsScreen: React.FC = () => {
     const currentDate = new Date().toISOString(); // Get the current date in ISO format
 
     const plantData = {
-      id: plant.id.toString(), // Convert plant id to string
+      id: "", // Convert plant id to string
       name: plant.common_name,
-      apiPlantId: plant.id, // Assuming apiPlantId is the same as plant.id
+      apiPlantId: plant.id.toString(), // Assuming apiPlantId is the same as plant.id
       lastWatered: currentDate,
       datePlanted: currentDate,
       growthRecords: [
         {
           recordDate: currentDate,
           notes: "string", // Add appropriate notes
-          photoUrl: "string", // Add photo URL if available
+          photoUrl:
+            plant.default_image?.original_url ||
+            "https://via.placeholder.com/150", // Add photo URL if available
         },
       ],
     };
-
+    console.log(plantData);
     try {
+      console.log(JSON.stringify(plantData));
       const response = await fetch(
         `${gardenApiUrl}/api/Gardens/${userId}/plants`,
         {
@@ -92,6 +96,7 @@ const PlantsScreen: React.FC = () => {
       );
 
       if (!response.ok) {
+        console.log(response);
         throw new Error("Failed to add plant to your garden.");
       }
 

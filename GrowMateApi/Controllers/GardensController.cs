@@ -95,7 +95,7 @@ public class GardensController : ControllerBase
 	}
 
 	//testing if works bring back the previous implementation
-	[Authorize]
+	
 	[HttpPost("{gardenId}/plants")]
 	public async Task<IActionResult> AddPlant(string gardenId, [FromBody] Plant plant)
 	{
