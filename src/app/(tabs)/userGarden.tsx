@@ -360,12 +360,15 @@ const UserGardenScreen: React.FC = () => {
     try {
       const token = await AsyncStorage.getItem("jwtToken");
 
-      const response = await fetch(`${apiUrl}/api/Plants/${plantId}`, {
-        method: "DELETE",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      const response = await fetch(
+        `${apiUrl}/api/Gardens/${userId}/plants/${plantId}`,
+        {
+          method: "DELETE",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
 
       if (response.ok) {
         Alert.alert("Success", "Plant removed successfully!");
