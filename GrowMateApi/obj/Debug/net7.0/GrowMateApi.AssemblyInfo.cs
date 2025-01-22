@@ -14,7 +14,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("GrowMateApi")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+e9dc346bb4e038978bed35a1da9ef5a745471f0a")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+35455d81a0c3e6a29eee8dfbb08b20d890f5ee91")]
 [assembly: System.Reflection.AssemblyProductAttribute("GrowMateApi")]
 [assembly: System.Reflection.AssemblyTitleAttribute("GrowMateApi")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
