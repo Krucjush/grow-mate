@@ -126,4 +126,27 @@ public class GardensController : ControllerBase
 
 		return NoContent();
 	}
+
+	[Authorize]
+	[HttpPut("{gardenId}/plants/{plantId}/water")]
+	public async Task<IActionResult> UpdatePlantLastWatered(string gardenId, string plantId)
+	{
+		var garden = await _gardensCollection.Find(g => g.Id == gardenId).FirstOrDefaultAsync();
+		if (garden == null)
+		{
+			return NotFound($"Garden with ID {gardenId} not found.");
+		}
+
+		var plant = garden.Plants?.FirstOrDefault(p => p.Id == plantId);
+		if (plant == null)
+		{
+			return NotFound($"Plant with ID {plantId} not found in garden {gardenId}.");
+		}
+
+		plant.LastWatered = DateTime.UtcNow;
+
+		await _gardensCollection.ReplaceOneAsync(g => g.Id == gardenId, garden);
+
+		return Ok(plant);
+	}
 }
