@@ -35,11 +35,6 @@ public class GardensController : ControllerBase
 		{
 			var template = _gardenTemplateService.GetTemplateById(garden.TemplateId);
 
-			if (template == null)
-			{
-				return BadRequest("Template not found.");
-			}
-
 			garden.Description ??= template.Description;
 		}
 
@@ -94,7 +89,6 @@ public class GardensController : ControllerBase
 		return Ok(gardens);
 	}
 
-	//testing if works bring back the previous implementation
 	[Authorize]
 	[HttpPost("{gardenId}/plants")]
 	public async Task<IActionResult> AddPlant(string gardenId, [FromBody] Plant plant)
@@ -103,10 +97,33 @@ public class GardensController : ControllerBase
 
 		var garden = await _gardensCollection.Find(g => g.Id == gardenId).FirstOrDefaultAsync();
 
-		garden.Plants.Add(plant);
+		garden.Plants?.Add(plant);
 
 		await _gardensCollection.ReplaceOneAsync(g => g.Id == gardenId, garden);
 
 		return Ok(garden);
+	}
+
+	[Authorize]
+	[HttpDelete("{gardenId}/plants/{plantId}")]
+	public async Task<IActionResult> RemovePlant(string gardenId, string plantId)
+	{
+		var garden = await _gardensCollection.Find(g => g.Id == gardenId).FirstOrDefaultAsync();
+		if (garden == null)
+		{
+			return NotFound($"Garden with ID {gardenId} not found.");
+		}
+
+		var plant = garden.Plants?.FirstOrDefault(p => p.Id == plantId);
+		if (plant == null)
+		{
+			return NotFound($"Plant with ID {plantId} not found in garden {gardenId}.");
+		}
+
+		garden.Plants!.Remove(plant);
+
+		await _gardensCollection.ReplaceOneAsync(g => g.Id == gardenId, garden);
+
+		return NoContent();
 	}
 }

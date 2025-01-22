@@ -1,16 +1,16 @@
-﻿using Microsoft.AspNetCore.Mvc;
-using MongoDB.Driver;
-using System.IdentityModel.Tokens.Jwt;
+﻿using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
 using System.Text.RegularExpressions;
 using GrowMateApi.Interfaces;
+using GrowMateApi.Models;
 using GrowMateApi.Models.Dtos;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
-using Amazon.Runtime.Internal;
-using GrowMateApi.Models;
+using MongoDB.Driver;
 
+namespace GrowMateApi.Controllers;
 
 [Route("api/[controller]")]
 [ApiController]
