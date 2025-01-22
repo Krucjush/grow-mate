@@ -26,8 +26,6 @@ namespace GrowMateApi.Controllers
 		public ActionResult<GardenTemplate> GetTemplateById(string id)
 		{
 			var template = _gardenTemplateService.GetTemplateById(id);
-			if (template == null)
-				return NotFound();
 
 			return Ok(template);
 		}

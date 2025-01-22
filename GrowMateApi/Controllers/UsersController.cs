@@ -9,12 +9,10 @@ using MongoDB.Driver;
 public class UsersController : ControllerBase
 {
 	private readonly IMongoCollection<User> _usersCollection;
-	private readonly IMongoCollection<Garden> _gardensCollection;
 
 	public UsersController(IMongoDatabase database)
 	{
 		_usersCollection = database.GetCollection<User>("Users");
-		_gardensCollection = database.GetCollection<Garden>("Gardens");
 	}
 
 	[Authorize(Roles= "Admin")]

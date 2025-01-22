@@ -15,7 +15,6 @@ namespace GrowMateApi.Controllers
 		private readonly IMongoCollection<Plant> _plantsCollection;
 		private readonly IMongoCollection<GardenTask> _tasksCollection;
 		private readonly IMongoCollection<Notification> _notificationsCollection;
-		private readonly IMongoCollection<PlantGrowthRecord> _growthRecordCollection;
 		private readonly IMongoCollection<Garden> _gardensCollection;
 		private readonly PlantApiService _plantApiService;
 
@@ -24,7 +23,6 @@ namespace GrowMateApi.Controllers
 			_plantsCollection = database.GetCollection<Plant>("Plants");
 			_tasksCollection = database.GetCollection<GardenTask>("GardenTasks");
 			_notificationsCollection = database.GetCollection<Notification>("Notifications");
-			_growthRecordCollection = database.GetCollection<PlantGrowthRecord>("GrowthRecords");
 			_gardensCollection = database.GetCollection<Garden>("Gardens");
 			_plantApiService = plantApiService;
 		}
@@ -112,10 +110,6 @@ namespace GrowMateApi.Controllers
 			}
 
 			var plantData = await _plantApiService.GetPlantDataAsync(plantId);
-			if (plantData == null)
-			{
-				return NotFound("Plant not found in the external API.");
-			}
 
 			var plant = new Plant
 			{
@@ -179,7 +173,7 @@ namespace GrowMateApi.Controllers
 				return NotFound("Garden not found for this user.");
 			}
 
-			var plant = garden.Plants.FirstOrDefault(p => p.Id == plantId);
+			var plant = garden.Plants?.FirstOrDefault(p => p.Id == plantId);
 			if (plant == null)
 			{
 				return NotFound("Plant not found in the user's garden.");
@@ -201,12 +195,12 @@ namespace GrowMateApi.Controllers
 				.Find(g => g.UserId == userId)
 				.FirstOrDefaultAsync();
 
-			if (garden == null || !garden.Plants.Any())
+			if (garden == null || !garden.Plants!.Any())
 			{
 				return NotFound("No plants found in the user's garden.");
 			}
 
-			var plant = garden.Plants.FirstOrDefault(p => p.Id == plantId);
+			var plant = garden.Plants!.FirstOrDefault(p => p.Id == plantId);
 			if (plant == null || !plant.GrowthRecords.Any())
 			{
 				return NotFound("No growth records found for this plant.");

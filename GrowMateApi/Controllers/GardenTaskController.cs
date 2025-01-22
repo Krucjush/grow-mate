@@ -3,6 +3,8 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using MongoDB.Driver;
 
+namespace GrowMateApi.Controllers;
+
 [Route("api/[controller]")]
 [ApiController]
 public class GardenTaskController : ControllerBase
@@ -47,18 +49,16 @@ public class GardenTaskController : ControllerBase
 			return NotFound();
 		}
 
-		if (isTaskCompletion)
+		if (!isTaskCompletion) return Ok(task);
+		var trackingLog = new PlantTrackingLog
 		{
-			var trackingLog = new PlantTrackingLog
-			{
-				PlantId = task.PlantId,
-				EventDate = DateTime.UtcNow,
-				EventType = task.TaskType,
-				Notes = task.Notes
-			};
+			PlantId = task.PlantId,
+			EventDate = DateTime.UtcNow,
+			EventType = task.TaskType,
+			Notes = task.Notes
+		};
 
-			await _trackingLogsCollection.InsertOneAsync(trackingLog);
-		}
+		await _trackingLogsCollection.InsertOneAsync(trackingLog);
 
 		return Ok(task);
 	}
