@@ -12,6 +12,7 @@ import {
   TextInput,
   Platform,
   TouchableOpacity,
+  ImageBackground,
 } from "react-native";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import DatePicker from "react-datepicker"; // For web
@@ -22,6 +23,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useAuth } from "@/components/AuthContext";
 import { automateTasks } from "@/components/TaskAutomation";
 import React from "react";
+import { Feather, FontAwesome } from "@expo/vector-icons";
 
 // Define the types for the data structure
 interface UserGarden {
@@ -41,13 +43,18 @@ interface Soil {
 
 interface UserPlant {
   id: string;
-  knowledgeBaseId: string;
-  lastWatered: string;
-  datePlanted: string;
   name: string;
-  imageUrl: string;
+  apiPlantId: string;
+  lastWatered: string; // ISO date format
+  datePlanted: string; // ISO date format
+  growthRecords: GrowthRecord[]; // List of growth records
 }
 
+interface GrowthRecord {
+  recordDate: string; // ISO date format
+  notes: string;
+  photoUrl: string | null; // Optional photo URL
+}
 interface GardenTask {
   id: string;
   userId: string;
@@ -60,10 +67,12 @@ interface GardenTask {
   notes: string;
 }
 
+const { width, height } = Dimensions.get("window");
+const scale = width < 768 ? width / 375 : width / 1024;
 // Main component
 const UserGardenScreen: React.FC = () => {
   const [weatherData, setWeatherData] = useState<any[]>([]);
-
+  const [scale, setScale] = useState<number>(1);
   const [userGarden, setUserGarden] = useState<UserGarden | null>(null);
   const [gardenTasks, setGardenTasks] = useState<GardenTask[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
@@ -88,10 +97,41 @@ const UserGardenScreen: React.FC = () => {
   const apiUrl = process.env.EXPO_PUBLIC_API;
   const weatherApiUrl = process.env.EXPO_PUBLIC_API_WEATHER;
 
+  const baseScale = Platform.OS === "web" ? 1 : width / 375;
   const Logo = require("@/assets/images/plant-image.png");
+  const weatherIcons: { [key: string]: string } = {
+    snow: "cloud-snow",
+    rain: "cloud-rain",
+    fog: "cloud",
+    wind: "wind",
+    cloudy: "cloud",
+    "partly-cloudy-day": "cloud",
+    "clear-day": "sun",
+    thunder: "cloud-lightning",
+    // dodaj więcej mapowań według potrzeb
+  };
+  const getFormattedDate = (date: Date) => {
+    return date.toISOString().split("T")[0]; // Formatuj datę w formacie YYYY-MM-DD
+  };
 
+  const today = new Date();
+  const twoDaysLater = new Date();
+  twoDaysLater.setDate(today.getDate() + 2);
+
+  const startDate = getFormattedDate(today);
+  const endDate = getFormattedDate(twoDaysLater);
+  console.log(startDate + "    " + endDate);
+  const weatherApi = `https://weather.visualcrossing.com/VisualCrossingWebServices/rest/services/timeline/Krak%C3%B3w/${startDate}/${endDate}?unitGroup=metric&key=${weatherApiUrl}&include=current`;
   // Update with the correct path or URL
   // Fetch the garden data and tasks from the API or server
+  useEffect(() => {
+    const subscription = Dimensions.addEventListener("change", () => {
+      const { width } = Dimensions.get("window");
+      setScale(width / 375);
+    });
+
+    return () => subscription?.remove();
+  }, []);
   useEffect(() => {
     const fetchGardenData = async () => {
       try {
@@ -146,7 +186,7 @@ const UserGardenScreen: React.FC = () => {
   useEffect(() => {
     const fetchWeatherData = async () => {
       try {
-        const response = await fetch(`${weatherApiUrl}`);
+        const response = await fetch(`${weatherApi}`);
         const data = await response.json();
 
         const formattedData = data.days.map((day: any) => ({
@@ -182,10 +222,10 @@ const UserGardenScreen: React.FC = () => {
   const WeatherCard = ({ item }: { item: any }) => (
     <View style={styles.card}>
       <Text style={styles.date}>{item.datetime}</Text>
-      <Image
-        source={{
-          uri: item, // Replace later
-        }}
+      <Feather
+        name={weatherIcons[item.icon] || "cloud"}
+        size={24}
+        color="#000"
         style={styles.icon}
       />
       <Text style={styles.temperature}>{item.temp}°C</Text>
@@ -244,26 +284,107 @@ const UserGardenScreen: React.FC = () => {
   };
 
   // Function to render each plant
-  const renderPlant = ({ item }: { item: UserPlant }) => (
-    <View style={styles.plantItem}>
-      <Image
-        source={{
-          uri: item.imageUrl,
-        }} // Temporary image placeholder
-        style={styles.plantImage}
-      />
-      <View style={styles.plantDetails}>
-        <Text style={styles.plantName}>{item.name}</Text>
-        <Text style={styles.plantInfo}>
-          Last Watered: {new Date(item.lastWatered).toLocaleDateString()}
-        </Text>
-        <Text style={styles.plantInfo}>
-          Date Planted: {new Date(item.datePlanted).toLocaleDateString()}
-        </Text>
-      </View>
-    </View>
-  );
+  const renderPlant = ({ item }: { item: UserPlant }) => {
+    const photoUrl =
+      item.growthRecords.length > 0 ? item.growthRecords[0].photoUrl : null;
 
+    return (
+      <View style={styles.plantItem}>
+        <Image
+          source={{
+            uri: photoUrl || "https://via.placeholder.com/150",
+          }}
+          style={styles.plantImage}
+        />
+        <View style={styles.plantDetails}>
+          <Text style={styles.plantName}>{item.name}</Text>
+          <Text style={styles.plantInfo}>
+            Last Watered: {new Date(item.lastWatered).toLocaleDateString()}
+          </Text>
+          <Text style={styles.plantInfo}>
+            Date Planted: {new Date(item.datePlanted).toLocaleDateString()}
+          </Text>
+        </View>
+        <TouchableOpacity
+          style={styles.waterButton}
+          onPress={() => handleWaterPlant(item.id)} // Funkcja podlewania
+        >
+          <FontAwesome name="tint" size={30} color="#4caf50" />
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={styles.deleteButton}
+          onPress={() => handleDeletePlant(item.id)}
+        >
+          <Text style={styles.deleteButtonText}>Delete</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  };
+  const handleWaterPlant = async (plantId: string) => {
+    try {
+      const token = await AsyncStorage.getItem("jwtToken");
+
+      const response = await fetch(`${apiUrl}/api/Plants/${plantId}`, {
+        method: "PUT",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          lastWatered: new Date().toISOString(), // Ustawienie bieżącej daty
+        }),
+      });
+
+      if (response.ok) {
+        Alert.alert("Success", "Plant watered successfully!");
+        // Zaktualizowanie lokalnej rośliny
+        setUserGarden((prevGarden) => {
+          if (!prevGarden) return prevGarden;
+          return {
+            ...prevGarden,
+            plants: prevGarden.plants.map((plant) =>
+              plant.id === plantId
+                ? { ...plant, lastWatered: new Date().toISOString() }
+                : plant
+            ),
+          };
+        });
+      } else {
+        Alert.alert("Error", "Failed to update watering time.");
+      }
+    } catch (error) {
+      Alert.alert("Error", "An error occurred while watering the plant.");
+    }
+  };
+  const handleDeletePlant = async (plantId: string) => {
+    try {
+      const token = await AsyncStorage.getItem("jwtToken");
+
+      const response = await fetch(`${apiUrl}/api/Plants/${plantId}`, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (response.ok) {
+        Alert.alert("Success", "Plant removed successfully!");
+
+        // Update local garden state
+        setUserGarden((prevGarden) => {
+          if (!prevGarden) return prevGarden;
+          return {
+            ...prevGarden,
+            plants: prevGarden.plants.filter((plant) => plant.id !== plantId),
+          };
+        });
+      } else {
+        Alert.alert("Error", "Failed to remove the plant.");
+      }
+    } catch (error) {
+      Alert.alert("Error", "An error occurred while removing the plant.");
+    }
+  };
   // Function to render each task
   const renderTask = ({ item }: { item: GardenTask }) => (
     <View style={styles.taskItem}>
@@ -365,135 +486,142 @@ const UserGardenScreen: React.FC = () => {
 
   // Render the garden information and tasks
   return (
-    <ScrollView style={styles.container}>
-      <FlatList
-        data={weatherData}
-        renderItem={({ item }) => <WeatherCard item={item} />}
-        keyExtractor={(item) => item.datetime}
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.listContainer}
-      />
-      {userGarden && (
-        <View style={styles.gardenContainer}>
-          <Text style={styles.gardenTitle}> {userGarden.name}</Text>
-          <Text style={styles.gardenInfo}> {userGarden.location}</Text>
+    <ImageBackground
+      source={require("@/assets/images/image.png")} // Ścieżka do Twojego obrazu
+      style={styles.backgroundImage}
+    >
+      <ScrollView style={styles.container}>
+        <FlatList
+          data={weatherData}
+          renderItem={({ item }) => <WeatherCard item={item} />}
+          keyExtractor={(item) => item.datetime}
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.listContainer}
+        />
+        {userGarden && (
+          <View style={styles.gardenContainer}>
+            <Text style={styles.gardenTitle}> {userGarden.name}</Text>
+            <Text style={styles.gardenInfo}> {userGarden.location}</Text>
 
-          {/* Ensure that soil exists before trying to display it */}
-          {userGarden.soil ? (
-            <>
+            {/* Ensure that soil exists before trying to display it */}
+            {userGarden.soil ? (
+              <>
+                <Text style={styles.gardenInfo}>
+                  Soil Type: {userGarden.soil.type}
+                </Text>
+                <Text style={styles.gardenInfo}>
+                  Soil pH Level: {userGarden.soil.pHLevel}
+                </Text>
+                <Text style={styles.gardenInfo}>
+                  Soil Moisture Level: {userGarden.soil.moistureLevel}
+                </Text>
+              </>
+            ) : (
               <Text style={styles.gardenInfo}>
-                Soil Type: {userGarden.soil.type}
+                Soil information not available
               </Text>
-              <Text style={styles.gardenInfo}>
-                Soil pH Level: {userGarden.soil.pHLevel}
+            )}
+
+            <Text style={styles.sectionTitle}>Plants in the Garden</Text>
+            <FlatList
+              data={userGarden.plants}
+              renderItem={renderPlant}
+              keyExtractor={(item) => item.id}
+              contentContainerStyle={styles.plantList}
+            />
+            <TouchableOpacity
+              style={styles.addButton} // Styl dla przycisku "Add Plant"
+              onPress={() => navigation.navigate("PlantsScreen")}
+            >
+              <Text style={styles.buttonText}>Add Plant</Text>
+            </TouchableOpacity>
+
+            <Text style={styles.sectionTitle}>Garden Tasks</Text>
+            <FlatList
+              data={gardenTasks}
+              renderItem={renderTask}
+              keyExtractor={(item) => item.id}
+              contentContainerStyle={styles.taskList}
+            />
+          </View>
+        )}
+        {userGarden && (
+          <View style={styles.gardenContainer}>
+            <TouchableOpacity
+              style={styles.toggleButton}
+              onPress={() => setIsFormVisible((prev) => !prev)}
+            >
+              <Text style={styles.toggleButtonText}>
+                {isFormVisible ? "▼ Add New Task" : "► Add New Task"}
               </Text>
-              <Text style={styles.gardenInfo}>
-                Soil Moisture Level: {userGarden.soil.moistureLevel}
-              </Text>
-            </>
-          ) : (
-            <Text style={styles.gardenInfo}>
-              Soil information not available
-            </Text>
-          )}
+            </TouchableOpacity>
 
-          <Text style={styles.sectionTitle}>Plants in the Garden</Text>
-          <FlatList
-            data={userGarden.plants}
-            renderItem={renderPlant}
-            keyExtractor={(item) => item.id}
-            contentContainerStyle={styles.plantList}
-          />
-          <Button
-            title="Add Plant"
-            onPress={() => navigation.navigate("addPlantForm")}
-          />
-
-          <Text style={styles.sectionTitle}>Garden Tasks</Text>
-          <FlatList
-            data={gardenTasks}
-            renderItem={renderTask}
-            keyExtractor={(item) => item.id}
-            contentContainerStyle={styles.taskList}
-          />
-        </View>
-      )}
-      {userGarden && (
-        <View style={styles.gardenContainer}>
-          <TouchableOpacity
-            style={styles.toggleButton}
-            onPress={() => setIsFormVisible((prev) => !prev)}
-          >
-            <Text style={styles.toggleButtonText}>
-              {isFormVisible ? "▼ Add New Task" : "► Add New Task"}
-            </Text>
-          </TouchableOpacity>
-
-          {isFormVisible && (
-            <View style={styles.formContainer}>
-              <Text style={styles.label}>Task Name</Text>
-              <TextInput
-                style={styles.input}
-                value={newTask.taskName}
-                onChangeText={(text) =>
-                  setNewTask((prev) => ({ ...prev, taskName: text }))
-                }
-                placeholder="Enter task name"
-              />
-
-              <Text style={styles.label}>Plant ID</Text>
-              <TextInput
-                style={styles.input}
-                value={newTask.plantId}
-                onChangeText={(text) =>
-                  setNewTask((prev) => ({ ...prev, plantId: text }))
-                }
-                placeholder="Enter plant ID"
-              />
-
-              <Text style={styles.label}>Scheduled Time</Text>
-              {Platform.OS === "web" ? (
-                <DatePicker
-                  selected={new Date(newTask.scheduledTime)}
-                  onChange={handleWebDateChange}
-                  showTimeSelect
-                  dateFormat="Pp"
-                  className="web-datepicker"
+            {isFormVisible && (
+              <View style={styles.formContainer}>
+                <Text style={styles.label}>Task Name</Text>
+                <TextInput
+                  style={styles.input}
+                  value={newTask.taskName}
+                  onChangeText={(text) =>
+                    setNewTask((prev) => ({ ...prev, taskName: text }))
+                  }
+                  placeholder="Enter task name"
                 />
-              ) : (
-                <>
-                  <Button title="Pick a Date" onPress={showDatePicker} />
-                  {isDatePickerVisible && (
-                    <DateTimePicker
-                      value={new Date(newTask.scheduledTime)}
-                      mode="datetime"
-                      display="default"
-                      onChange={handleDateChange}
-                    />
-                  )}
-                </>
-              )}
-              <Text style={styles.dateText}>
-                {new Date(newTask.scheduledTime).toLocaleString()}
-              </Text>
 
-              <Text style={styles.label}>Notes</Text>
-              <TextInput
-                style={styles.input}
-                value={newTask.notes}
-                onChangeText={(text) =>
-                  setNewTask((prev) => ({ ...prev, notes: text }))
-                }
-                placeholder="Enter any notes"
-              />
+                <Text style={styles.label}>Plant ID</Text>
+                <TextInput
+                  style={styles.input}
+                  value={newTask.plantId}
+                  onChangeText={(text) =>
+                    setNewTask((prev) => ({ ...prev, plantId: text }))
+                  }
+                  placeholder="Enter plant ID"
+                />
 
-              <Button title="Add Task" onPress={handleAddTask} />
-            </View>
-          )}
-        </View>
-      )}
-    </ScrollView>
+                <Text style={styles.label}>Scheduled Time</Text>
+                {Platform.OS === "web" ? (
+                  <DatePicker
+                    selected={new Date(newTask.scheduledTime)}
+                    onChange={handleWebDateChange}
+                    showTimeSelect
+                    dateFormat="Pp"
+                    className="web-datepicker"
+                  />
+                ) : (
+                  <>
+                    <Button title="Pick a Date" onPress={showDatePicker} />
+                    {isDatePickerVisible && (
+                      <DateTimePicker
+                        value={new Date(newTask.scheduledTime)}
+                        mode="datetime"
+                        display="default"
+                        onChange={handleDateChange}
+                      />
+                    )}
+                  </>
+                )}
+                <Text style={styles.dateText}>
+                  {new Date(newTask.scheduledTime).toLocaleString()}
+                </Text>
+
+                <Text style={styles.label}>Notes</Text>
+                <TextInput
+                  style={styles.input}
+                  value={newTask.notes}
+                  onChangeText={(text) =>
+                    setNewTask((prev) => ({ ...prev, notes: text }))
+                  }
+                  placeholder="Enter any notes"
+                />
+
+                <Button title="Add Task" onPress={handleAddTask} />
+              </View>
+            )}
+          </View>
+        )}
+      </ScrollView>
+    </ImageBackground>
   );
 };
 
@@ -592,7 +720,7 @@ const styles = StyleSheet.create({
     padding: 16,
     marginHorizontal: 10,
     alignItems: "center",
-    width: Dimensions.get("window").width * 0.2, // Adjust card width
+    width: Dimensions.get("window").width * 0.3, // Adjust card width for wider display
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
@@ -652,6 +780,34 @@ const styles = StyleSheet.create({
   toggleButtonText: {
     fontSize: 16,
     fontWeight: "bold",
+  },
+  deleteButton: {
+    backgroundColor: "#FF0000",
+    padding: 10 * scale, // Increase button padding for larger size
+    borderRadius: 8 * scale, // Adjust border radius for a rounded look
+    marginLeft: 15 * scale, // Increase margin for spacing
+  },
+  deleteButtonText: {
+    color: "#FFF",
+    fontSize: 11 * scale, // Larger font size for better visibility
+    fontWeight: "bold",
+  },
+  waterButton: {
+    marginLeft: 15 * scale,
+    padding: 12 * scale, // Adjust padding for consistency
+  },
+  addButton: {
+    paddingVertical: 10 * scale,
+    paddingHorizontal: 20 * scale, // Increase padding for a larger button
+    backgroundColor: "#4CAF50",
+    borderRadius: 8 * scale,
+    alignItems: "center",
+    marginTop: 10 * scale,
+    alignSelf: "flex-start",
+  },
+  backgroundImage: {
+    flex: 1,
+    resizeMode: "cover",
   },
 });
 

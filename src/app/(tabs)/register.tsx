@@ -16,7 +16,7 @@ import ParallaxScrollView from "@/components/ParallaxScrollView";
 import { useNavigation } from "@react-navigation/native";
 import { StackNavigationProp } from "@react-navigation/stack";
 import { RootStackParamList } from "@/components/navigation/types";
-import LoginScreen from "./_layout"
+import LoginScreen from "./_layout";
 type RegisterScreenNavigationProp = StackNavigationProp<
   RootStackParamList,
   "register"
@@ -52,7 +52,9 @@ const RegisterScreen: React.FC = () => {
       const data = await response.json();
 
       if (response.ok) {
+        console.log(response);
         Alert.alert("Sukces", "Konto zostało utworzone");
+        navigation.navigate("Login");
       } else {
         Alert.alert("Błąd", data.message || "Coś poszło nie tak");
       }
@@ -181,6 +183,7 @@ const styles = StyleSheet.create({
     color: "#007BFF", // Kolor linku
     fontSize: 16,
   },
+ 
 });
 
 export default RegisterScreen;
