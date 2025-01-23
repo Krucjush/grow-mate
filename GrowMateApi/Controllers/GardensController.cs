@@ -149,4 +149,87 @@ public class GardensController : ControllerBase
 
 		return Ok(plant);
 	}
+
+	[Authorize]
+	[HttpPost("{gardenId}/plants/{plantId}/growth-records")]
+	public async Task<IActionResult> AddGrowthRecord(string gardenId, string plantId, [FromBody] PlantGrowthRecord record)
+	{
+		var garden = await _gardensCollection.Find(g => g.Id == gardenId).FirstOrDefaultAsync();
+		if (garden == null)
+		{
+			return NotFound($"Garden with ID {gardenId} not found.");
+		}
+
+		var plant = garden.Plants?.FirstOrDefault(p => p.Id == plantId);
+		if (plant == null)
+		{
+			return NotFound($"Plant with ID {plantId} not found in garden {gardenId}.");
+		}
+
+		record.RecordDate = DateTime.UtcNow;
+		plant.GrowthRecords.Add(record);
+
+		await _gardensCollection.ReplaceOneAsync(g => g.Id == gardenId, garden);
+
+		return Ok(record);
+	}
+
+	[Authorize]
+	[HttpPut("{gardenId}/plants/{plantId}/growth-records/{recordDate}")]
+	public async Task<IActionResult> UpdateGrowthRecord(string gardenId, string plantId, DateTime recordDate, [FromBody] PlantGrowthRecord updatedRecord)
+	{
+		var garden = await _gardensCollection.Find(g => g.Id == gardenId).FirstOrDefaultAsync();
+		if (garden == null)
+		{
+			return NotFound($"Garden with ID {gardenId} not found.");
+		}
+
+		var plant = garden.Plants?.FirstOrDefault(p => p.Id == plantId);
+		if (plant == null)
+		{
+			return NotFound($"Plant with ID {plantId} not found in garden {gardenId}.");
+		}
+
+		var record = plant.GrowthRecords.FirstOrDefault(r => r.RecordDate == recordDate);
+		if (record == null)
+		{
+			return NotFound($"Growth record with date {recordDate} not found.");
+		}
+
+		record.Notes = updatedRecord.Notes;
+		record.PhotoUrl = updatedRecord.PhotoUrl;
+
+		await _gardensCollection.ReplaceOneAsync(g => g.Id == gardenId, garden);
+
+		return Ok(record);
+	}
+
+	[Authorize]
+	[HttpDelete("{gardenId}/plants/{plantId}/growth-records/{recordDate}")]
+	public async Task<IActionResult> RemoveGrowthRecord(string gardenId, string plantId, DateTime recordDate)
+	{
+		var garden = await _gardensCollection.Find(g => g.Id == gardenId).FirstOrDefaultAsync();
+		if (garden == null)
+		{
+			return NotFound($"Garden with ID {gardenId} not found.");
+		}
+
+		var plant = garden.Plants?.FirstOrDefault(p => p.Id == plantId);
+		if (plant == null)
+		{
+			return NotFound($"Plant with ID {plantId} not found in garden {gardenId}.");
+		}
+
+		var recordToRemove = plant.GrowthRecords.FirstOrDefault(r => r.RecordDate == recordDate);
+		if (recordToRemove == null)
+		{
+			return NotFound($"Growth record with date {recordDate} not found.");
+		}
+
+		plant.GrowthRecords.Remove(recordToRemove);
+
+		await _gardensCollection.ReplaceOneAsync(g => g.Id == gardenId, garden);
+
+		return NoContent();
+	}
 }
