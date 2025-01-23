@@ -84,11 +84,14 @@ const PlantsScreen: React.FC = () => {
     console.log(plantData);
     try {
       console.log(JSON.stringify(plantData));
+      console.log(userId);
+      const token = await AsyncStorage.getItem("jwtToken");
       const response = await fetch(
         `${gardenApiUrl}/api/Gardens/${userId}/plants`,
         {
           method: "POST",
           headers: {
+            Authorization: `Bearer ${token}`,
             "Content-Type": "application/json",
           },
           body: JSON.stringify(plantData),

@@ -71,6 +71,7 @@ const { width, height } = Dimensions.get("window");
 const scale = width < 768 ? width / 375 : width / 1024;
 // Main component
 const UserGardenScreen: React.FC = () => {
+  const { userId } = useAuth();
   const [weatherData, setWeatherData] = useState<any[]>([]);
   const [scale, setScale] = useState<number>(1);
   const [userGarden, setUserGarden] = useState<UserGarden | null>(null);
@@ -79,20 +80,20 @@ const UserGardenScreen: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [isDatePickerVisible, setDatePickerVisibility] = useState(false);
   const [isFormVisible, setIsFormVisible] = useState(false);
-  const [newTask, setNewTask] = useState<GardenTask>({
+  const [newTask, setNewTask] = useState({
     id: "",
-    userId: "",
+    userId: userId,
     taskName: "",
     plantId: "",
-    scheduledTime: new Date().toISOString(),
+    scheduledTime: "",
     isCompleted: false,
     taskType: "",
-    recurrenceInterval: 0,
+    recurrenceInterval: "00:00:00",
     notes: "",
   });
   const route = useRoute();
   const params = route.params as { userId?: string } | undefined;
-  const { userId } = useAuth();
+
   const navigation = useNavigation();
   const apiUrl = process.env.EXPO_PUBLIC_API;
   const weatherApiUrl = process.env.EXPO_PUBLIC_API_WEATHER;
@@ -110,6 +111,7 @@ const UserGardenScreen: React.FC = () => {
     thunder: "cloud-lightning",
     // dodaj więcej mapowań według potrzeb
   };
+
   const getFormattedDate = (date: Date) => {
     return date.toISOString().split("T")[0]; // Formatuj datę w formacie YYYY-MM-DD
   };
@@ -324,16 +326,19 @@ const UserGardenScreen: React.FC = () => {
     try {
       const token = await AsyncStorage.getItem("jwtToken");
 
-      const response = await fetch(`${apiUrl}/api/Plants/${plantId}`, {
-        method: "PUT",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          lastWatered: new Date().toISOString(), // Ustawienie bieżącej daty
-        }),
-      });
+      const response = await fetch(
+        `${apiUrl}/api/gardens/${userId}/plants/${plantId}/water`,
+        {
+          method: "PUT",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            lastWatered: new Date().toISOString(), // Ustawienie bieżącej daty
+          }),
+        }
+      );
 
       if (response.ok) {
         Alert.alert("Success", "Plant watered successfully!");
@@ -388,6 +393,7 @@ const UserGardenScreen: React.FC = () => {
       Alert.alert("Error", "An error occurred while removing the plant.");
     }
   };
+
   // Function to render each task
   const renderTask = ({ item }: { item: GardenTask }) => (
     <View style={styles.taskItem}>
@@ -408,21 +414,30 @@ const UserGardenScreen: React.FC = () => {
   const handleAddTask = async () => {
     try {
       const token = await AsyncStorage.getItem("jwtToken");
-
+      console.log(newTask);
       const response = await fetch(`${apiUrl}/api/GardenTask`, {
         method: "POST",
         headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
         },
+
         body: JSON.stringify({
-          ...newTask,
-          scheduledTime: newTask.scheduledTime.toISOString(),
+          id: "", // Generuj ID jeśli potrzebne
+          userId: userId,
+          taskName: newTask.taskName,
+          plantId: newTask.plantId,
+          scheduledTime: new Date(newTask.scheduledTime).toISOString(),
+          isCompleted: newTask.isCompleted || false,
+          taskType: newTask.taskType || "",
+          recurrenceInterval: newTask.recurrenceInterval || "00:00:00",
+          notes: newTask.notes,
         }),
       });
 
       if (response.ok) {
         const createdTask = await response.json();
+
         setGardenTasks((prevTasks) => [...prevTasks, createdTask]);
         Alert.alert("Success", "Task added successfully!");
         setNewTask({
@@ -433,9 +448,10 @@ const UserGardenScreen: React.FC = () => {
           scheduledTime: "",
           isCompleted: false,
           taskType: "",
-          recurrenceInterval: 0,
+          recurrenceInterval: "00:00:00",
           notes: "",
         });
+        setIsFormVisible((prev) => !prev);
       } else {
         Alert.alert("Error", "Failed to add the task.");
       }
@@ -452,12 +468,11 @@ const UserGardenScreen: React.FC = () => {
     }
   };
 
-  const handleDateChange = (event: any, selectedDate?: Date) => {
-    setDatePickerVisibility(false);
+  const handleDateChange = (event, selectedDate) => {
     if (selectedDate) {
       setNewTask((prev) => ({
         ...prev,
-        scheduledTime: selectedDate,
+        scheduledTime: selectedDate.toISOString(),
       }));
     }
   };
@@ -552,7 +567,7 @@ const UserGardenScreen: React.FC = () => {
         {userGarden && (
           <View style={styles.gardenContainer}>
             <TouchableOpacity
-              style={styles.toggleButton}
+              style={styles.addButton}
               onPress={() => setIsFormVisible((prev) => !prev)}
             >
               <Text style={styles.toggleButtonText}>
@@ -582,11 +597,30 @@ const UserGardenScreen: React.FC = () => {
                   placeholder="Enter plant ID"
                 />
 
+                <Text style={styles.label}>Task Type</Text>
+                <TextInput
+                  style={styles.input}
+                  value={newTask.taskType}
+                  onChangeText={(text) =>
+                    setNewTask((prev) => ({ ...prev, taskType: text }))
+                  }
+                  placeholder="Enter task type"
+                />
+
                 <Text style={styles.label}>Scheduled Time</Text>
                 {Platform.OS === "web" ? (
                   <DatePicker
-                    selected={new Date(newTask.scheduledTime)}
-                    onChange={handleWebDateChange}
+                    selected={
+                      newTask.scheduledTime
+                        ? new Date(newTask.scheduledTime)
+                        : new Date()
+                    }
+                    onChange={(date) =>
+                      setNewTask((prev) => ({
+                        ...prev,
+                        scheduledTime: date.toISOString(),
+                      }))
+                    }
                     showTimeSelect
                     dateFormat="Pp"
                     className="web-datepicker"
@@ -605,8 +639,23 @@ const UserGardenScreen: React.FC = () => {
                   </>
                 )}
                 <Text style={styles.dateText}>
-                  {new Date(newTask.scheduledTime).toLocaleString()}
+                  {newTask.scheduledTime
+                    ? new Date(newTask.scheduledTime).toLocaleString()
+                    : "No date selected"}
                 </Text>
+
+                <Text style={styles.label}>Recurrence Interval (HH:MM:SS)</Text>
+                <TextInput
+                  style={styles.input}
+                  value={newTask.recurrenceInterval}
+                  onChangeText={(text) =>
+                    setNewTask((prev) => ({
+                      ...prev,
+                      recurrenceInterval: text,
+                    }))
+                  }
+                  placeholder="Enter recurrence interval"
+                />
 
                 <Text style={styles.label}>Notes</Text>
                 <TextInput
@@ -617,8 +666,12 @@ const UserGardenScreen: React.FC = () => {
                   }
                   placeholder="Enter any notes"
                 />
-
-                <Button title="Add Task" onPress={handleAddTask} />
+                <TouchableOpacity
+                  style={styles.addButton} // Styl dla przycisku "Add Plant"
+                  onPress={handleAddTask}
+                >
+                  <Text style={styles.buttonText}>Add Task</Text>
+                </TouchableOpacity>
               </View>
             )}
           </View>
@@ -632,7 +685,7 @@ const UserGardenScreen: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 16,
+    padding: 8, // Reduced padding for smaller screens
     backgroundColor: "#fff",
   },
   center: {
@@ -641,171 +694,171 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   gardenContainer: {
-    marginBottom: 20,
-    padding: 10,
+    marginBottom: 10,
+    padding: 8, // Reduced padding
     backgroundColor: "#e8f5e9",
-    borderRadius: 10,
+    borderRadius: 8, // Reduced border radius
   },
   gardenTitle: {
-    fontSize: 24,
+    fontSize: 20, // Reduced font size
     fontWeight: "bold",
-    marginBottom: 10,
+    marginBottom: 6,
     textAlign: "center",
   },
   gardenInfo: {
-    fontSize: 16,
-    marginVertical: 4,
+    fontSize: 14, // Reduced font size
+    marginVertical: 2,
     textAlign: "center",
   },
   sectionTitle: {
-    fontSize: 20,
+    fontSize: 18, // Reduced font size
     fontWeight: "bold",
-    marginVertical: 10,
+    marginVertical: 8,
   },
   plantList: {
-    paddingBottom: 20,
+    paddingBottom: 10, // Reduced padding
   },
   plantItem: {
     flexDirection: "row",
     alignItems: "center",
-    padding: 15,
+    padding: 10, // Reduced padding
     backgroundColor: "#f0f0f0",
-    borderRadius: 10,
-    marginVertical: 5,
+    borderRadius: 8, // Reduced border radius
+    marginVertical: 4, // Reduced margin
   },
   plantImage: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    marginRight: 15,
+    width: 40, // Reduced size
+    height: 40,
+    borderRadius: 20, // Adjusted for smaller circle
+    marginRight: 10, // Reduced margin
   },
   plantDetails: {
     flex: 1,
   },
   plantName: {
-    fontSize: 16,
+    fontSize: 14, // Reduced font size
     fontWeight: "bold",
   },
   plantInfo: {
-    fontSize: 14,
+    fontSize: 12, // Reduced font size
     color: "#555",
   },
   taskList: {
-    paddingBottom: 20,
+    paddingBottom: 10, // Reduced padding
   },
   taskItem: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    padding: 15,
+    padding: 10, // Reduced padding
     backgroundColor: "#e0f7fa",
-    borderRadius: 10,
-    marginVertical: 5,
+    borderRadius: 8, // Reduced border radius
+    marginVertical: 4, // Reduced margin
   },
   taskName: {
-    fontSize: 16,
+    fontSize: 14, // Reduced font size
     fontWeight: "bold",
-    marginBottom: 5,
+    marginBottom: 2, // Reduced margin
   },
   errorText: {
     color: "red",
-    fontSize: 16,
+    fontSize: 14, // Reduced font size
   },
   logo: {
-    width: 100,
-    height: 100,
+    width: 80, // Reduced size
+    height: 80,
     alignSelf: "center",
-    marginVertical: 20,
+    marginVertical: 10, // Reduced margin
   },
   card: {
     backgroundColor: "#ffffff",
-    borderRadius: 8,
-    padding: 16,
-    marginHorizontal: 10,
+    borderRadius: 8, // Reduced border radius
+    padding: 10, // Reduced padding
+    marginHorizontal: 6, // Reduced margin
     alignItems: "center",
-    width: Dimensions.get("window").width * 0.3, // Adjust card width for wider display
+    width: Dimensions.get("window").width * 0.4, // Adjusted width for smaller screens
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
+    shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.1,
-    shadowRadius: 5,
-    elevation: 3,
+    shadowRadius: 3,
+    elevation: 2,
   },
   date: {
-    fontSize: 14,
+    fontSize: 12, // Reduced font size
     color: "#666",
-    marginBottom: 8,
+    marginBottom: 4, // Reduced margin
   },
   icon: {
-    width: 50,
-    height: 50,
-    marginBottom: 8,
+    width: 40, // Reduced size
+    height: 40,
+    marginBottom: 6, // Reduced margin
   },
   temperature: {
-    fontSize: 20,
+    fontSize: 16, // Reduced font size
     fontWeight: "bold",
-    marginBottom: 4,
+    marginBottom: 2, // Reduced margin
   },
   conditions: {
-    fontSize: 16,
+    fontSize: 14, // Reduced font size
     color: "#333",
-    marginBottom: 4,
+    marginBottom: 2, // Reduced margin
   },
   humidity: {
-    fontSize: 14,
+    fontSize: 12, // Reduced font size
     color: "#888",
   },
   formContainer: {
-    padding: 15,
+    padding: 10, // Reduced padding
     backgroundColor: "#f9f9f9",
-    borderRadius: 10,
-    marginTop: 10,
+    borderRadius: 8, // Reduced border radius
+    marginTop: 8, // Reduced margin
   },
   label: {
-    fontSize: 14,
+    fontSize: 12, // Reduced font size
     fontWeight: "bold",
-    marginBottom: 5,
+    marginBottom: 4, // Reduced margin
   },
   input: {
     borderWidth: 1,
     borderColor: "#ccc",
     borderRadius: 5,
-    padding: 10,
-    marginBottom: 10,
+    padding: 8, // Reduced padding
+    marginBottom: 8, // Reduced margin
     backgroundColor: "#fff",
   },
   toggleButton: {
     flexDirection: "row",
     alignItems: "center",
-    padding: 10,
+    padding: 8, // Reduced padding
     backgroundColor: "#f0f0f0",
-    borderRadius: 5,
+    borderRadius: 5, // Reduced border radius
   },
   toggleButtonText: {
-    fontSize: 16,
+    fontSize: 14, // Reduced font size
     fontWeight: "bold",
   },
   deleteButton: {
     backgroundColor: "#FF0000",
-    padding: 10 * scale, // Increase button padding for larger size
-    borderRadius: 8 * scale, // Adjust border radius for a rounded look
-    marginLeft: 15 * scale, // Increase margin for spacing
+    padding: 8, // Reduced padding
+    borderRadius: 6, // Reduced border radius
+    marginLeft: 10, // Reduced margin
   },
   deleteButtonText: {
     color: "#FFF",
-    fontSize: 11 * scale, // Larger font size for better visibility
+    fontSize: 10, // Reduced font size
     fontWeight: "bold",
   },
   waterButton: {
-    marginLeft: 15 * scale,
-    padding: 12 * scale, // Adjust padding for consistency
+    marginLeft: 10, // Reduced margin
+    padding: 10, // Reduced padding
   },
   addButton: {
-    paddingVertical: 10 * scale,
-    paddingHorizontal: 20 * scale, // Increase padding for a larger button
+    paddingVertical: 8, // Reduced padding
+    paddingHorizontal: 16, // Reduced padding
     backgroundColor: "#4CAF50",
-    borderRadius: 8 * scale,
+    borderRadius: 6, // Reduced border radius
     alignItems: "center",
-    marginTop: 10 * scale,
+    marginTop: 8, // Reduced margin
     alignSelf: "flex-start",
   },
   backgroundImage: {

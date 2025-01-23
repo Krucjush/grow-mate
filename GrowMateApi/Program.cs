@@ -22,6 +22,7 @@ namespace GrowMateApi
 				option.AddPolicy("AllowAllOrigins",
 					policy =>
 					{
+
 						policy.AllowAnyOrigin()
 							.AllowAnyHeader()
 							.AllowAnyMethod();
