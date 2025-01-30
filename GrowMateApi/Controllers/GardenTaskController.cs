@@ -1,12 +1,13 @@
 ﻿using GrowMateApi.Models;
+using GrowMateApi.Models.Dtos;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using MongoDB.Driver;
 
 namespace GrowMateApi.Controllers;
 
-[Route("api/[controller]")]
 [ApiController]
+[Route("api/[controller]")]
 public class GardenTaskController : ControllerBase
 {
 	private readonly IMongoCollection<GardenTask> _tasksCollection;
@@ -28,22 +29,38 @@ public class GardenTaskController : ControllerBase
 
 	[Authorize]
 	[HttpPost]
-	public async Task<IActionResult> Create(GardenTask task)
+	public async Task<IActionResult> Create([FromBody] GardenTaskDto taskModel)
 	{
-		await _tasksCollection.InsertOneAsync(task);
-		return CreatedAtAction(nameof(Get), new { id = task.Id }, task);
+		var recurrenceInterval = TimeSpan.Parse(taskModel.RecurrenceInterval);
+
+		var newTask = new GardenTask
+		{
+			Id = Guid.NewGuid().ToString(),
+			UserId = taskModel.UserId,
+			TaskName = taskModel.TaskName,
+			PlantId = taskModel.PlantId,
+			ScheduledTime = DateTime.UtcNow.Add(recurrenceInterval),
+			IsCompleted = false,
+			TaskType = taskModel.TaskType,
+			RecurrenceInterval = recurrenceInterval,
+			Notes = taskModel.Notes
+		};
+		await _tasksCollection.InsertOneAsync(newTask);
+		return CreatedAtAction(nameof(Get), new { id = newTask.Id }, newTask);
 	}
 
 	[Authorize]
 	[HttpPut("{id}")]
-	public async Task<IActionResult> Update(string id, GardenTask task)
+	public async Task<IActionResult> Update(string id, GardenTaskDto task)
 	{
 		var existingTask = await _tasksCollection.Find(t => t.Id == id).FirstOrDefaultAsync();
 		if (existingTask == null) return NotFound();
 
 		var isTaskCompletion = !existingTask.IsCompleted && task.IsCompleted;
 
-		var result = await _tasksCollection.ReplaceOneAsync(t => t.Id == id, task);
+		existingTask.IsCompleted = true;
+
+		var result = await _tasksCollection.ReplaceOneAsync(t => t.Id == id, existingTask);
 		if (result.MatchedCount == 0)
 		{
 			return NotFound();
@@ -59,6 +76,23 @@ public class GardenTaskController : ControllerBase
 		};
 
 		await _trackingLogsCollection.InsertOneAsync(trackingLog);
+
+		if (task.RecurrenceInterval == "00:00:00") return Ok(task);
+		var recurrenceInterval = TimeSpan.Parse(task.RecurrenceInterval);
+		var newTask = new GardenTask
+		{
+			Id = Guid.NewGuid().ToString(),
+			UserId = task.UserId,
+			TaskName = task.TaskName,
+			PlantId = task.PlantId,
+			ScheduledTime = DateTime.UtcNow.Add(recurrenceInterval),
+			IsCompleted = false,
+			TaskType = task.TaskType,
+			RecurrenceInterval = recurrenceInterval,
+			Notes = task.Notes
+		};
+
+		await _tasksCollection.InsertOneAsync(newTask);
 
 		return Ok(task);
 	}

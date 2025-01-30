@@ -107,7 +107,12 @@ namespace GrowMateApi
 				client.DefaultRequestHeaders.Add("Authorization", $"Bearer {settings.ApiKey}");
 			});
 
-			builder.Services.AddHttpClient<WeatherApiService>();
+			builder.Services.AddHttpClient<WeatherApiService>((serviceProvider, client) =>
+			{
+				var configuration = serviceProvider.GetRequiredService<IConfiguration>();
+				var baseUrl = configuration["WeatherApi:BaseUrl"];
+				client.BaseAddress = new Uri(baseUrl);
+			});
 
 			builder.Services.AddMemoryCache();
 
@@ -118,12 +123,6 @@ namespace GrowMateApi
 			builder.Services.AddControllers();
 
 			var app = builder.Build();
-
-			using (var scope = app.Services.CreateScope())
-			{
-				var database = scope.ServiceProvider.GetRequiredService<IMongoDatabase>();
-				
-			}
 
 			// Configure the HTTP request pipeline.
 			if (app.Environment.IsDevelopment())
@@ -139,6 +138,7 @@ namespace GrowMateApi
 
 			app.UseCors("AllowAllOrigins");
 
+			app.UseRouting();
 			app.UseAuthentication();
 			app.UseAuthorization();
 

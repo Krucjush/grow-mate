@@ -3,6 +3,7 @@ using GrowMateApi.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using MongoDB.Driver;
+using System.Threading.Tasks;
 
 namespace GrowMateApi.Controllers;
 
@@ -12,11 +13,13 @@ public class GardensController : ControllerBase
 {
 	private readonly IMongoCollection<Garden> _gardensCollection;
 	private readonly IGardenTemplateService _gardenTemplateService;
+	private readonly IMongoCollection<GardenTask> _tasksCollection;
 
 	public GardensController(IMongoDatabase database, IGardenTemplateService gardenTemplateService)
 	{
 		_gardensCollection = database.GetCollection<Garden>("Gardens");
 		_gardenTemplateService = gardenTemplateService;
+		_tasksCollection = database.GetCollection<GardenTask>("GardenTasks");
 	}
 
 	[Authorize]
@@ -100,6 +103,21 @@ public class GardensController : ControllerBase
 		garden.Plants?.Add(plant);
 
 		await _gardensCollection.ReplaceOneAsync(g => g.Id == gardenId, garden);
+
+		var newTask = new GardenTask
+		{
+			Id = Guid.NewGuid().ToString(),
+			UserId = gardenId,
+			TaskName = $"{plant.Name} watering",
+			PlantId = plant.Id,
+			ScheduledTime = DateTime.UtcNow.Add(TimeSpan.FromHours(10)),
+			IsCompleted = false,
+			TaskType = "Watering",
+			RecurrenceInterval = TimeSpan.FromHours(10),
+			Notes = ""
+		};
+
+		await _tasksCollection.InsertOneAsync(newTask);
 
 		return Ok(garden);
 	}
